@@ -12,9 +12,10 @@ import logging
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
+from PySide6.QtWidgets import (QApplication, QMainWindow)
+
 import resources as res
-from PySide6.QtWidgets import (QApplication, QLabel, QMainWindow, QVBoxLayout,
-                               QWidget)
+
 
 class Frm_main(QMainWindow, res.Ui_frm_main):
     def __init__(self):
@@ -28,23 +29,57 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
         self.actionKostenarten.triggered.connect(self.show_kostenarten)
         self.actionStockwerke.triggered.connect(self.show_stockwerke)
         self.actionUmlageschluessel.triggered.connect(self.show_umlageschluessel)
-        self.actionVermietung.triggered.connect(self.show_vermietung)
-        self.btn_vermietung_add.clicked.connect(self.btn_vermietung_add_clicked)
         self.actionWohnungen.triggered.connect(self.show_wohnung)
         self.btn_wohnungen_add.clicked.connect(self.btn_wohnungen_add_clicked)
+        self.btn_wohnungen_edit.clicked.connect(self.btn_wohnungen_edit_clicked)
+        self.actionVermietung.triggered.connect(self.show_vermietung)
+        self.btn_vermietung_add.clicked.connect(self.btn_vermietung_add_clicked)
+        self.btn_vermietung_edit.clicked.connect(self.btn_vermietung_edit_clicked)
         self.actionZaehler.triggered.connect(self.show_zaehler)
         self.actionZaehlertypen.triggered.connect(self.show_zaehlertypen)
         self.actionBeenden.triggered.connect(self.close)
-
+        
+    def btn_vermietung_edit_clicked(self):
+            self.stackedWidget.setCurrentWidget(self.p_vermietung)
+            model = self.tbl_vermietung.model()
+            rows = sorted(set(index.row() for index in
+                        self.tbl_vermietung.selectedIndexes()))
+            if rows:
+                for row in rows:
+                    #print('Row %d is selected' % row)
+                    id = model.data(model.index(row,0))
+                #print(id)
+                dlg = res.dlg_update_mieter(id)
+                if dlg.exec():
+                    self.show_vermietung()
+                else:
+                    pass
+                
+    def btn_wohnungen_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_wohnungen)
+        model = self.tbl_wohnungen.model()
+        rows = sorted(set(index.row() for index in
+                      self.tbl_wohnungen.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_wohnung(id)
+            if dlg.exec():
+                self.show_wohnung()
+            else:
+                pass
+        
     def btn_wohnungen_add_clicked(self, s):
-        dlg = res.add_wohnung()
+        dlg = res.dlg_add_wohnung()
         if dlg.exec():
             self.show_wohnung()
         else:
             pass
     
     def btn_vermietung_add_clicked(self, s):
-        dlg = res.add_mieter()
+        dlg = res.dlg_add_mieter()
         if dlg.exec():
             self.show_vermietung()
         else:
@@ -91,8 +126,7 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
 
     def show_wohnung(self):
         self.stackedWidget.setCurrentWidget(self.p_wohnungen)
-        pdData = res.fetch_db_pd('Wohnungen')
-        model = res.PandasModel(pdData[['Nummer', 'Stockwerk', 'qm', 'Zimmer']])
+        model = res.PandasModel(res.fetch_db_pd('Wohnungen'))
         self.tbl_wohnungen.setModel(model)
         
     def show_zaehler(self):
@@ -104,14 +138,13 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
         self.stackedWidget.setCurrentWidget(self.p_zaehlertypen)
         model = res.PandasModel(res.fetch_db_pd('Zaehlertypen'))
         self.tbl_zaehlertypen.setModel(model)
-
+    
 
 def main():
     app = QApplication()
     frm_main = Frm_main()
     frm_main.show()
     app.exec()
-#    print(fetch_db_pd('Wohnungen'))
 
 if __name__ == '__main__':
     main()

@@ -8,24 +8,24 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import (QCoreApplication, QDate, QDateTime, QLocale,
-    QMetaObject, QObject, QPoint, QRect,
-    QSize, QTime, QUrl, Qt)
-from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
-    QCursor, QFont, QFontDatabase, QGradient,
-    QIcon, QImage, QKeySequence, QLinearGradient,
-    QPainter, QPalette, QPixmap, QRadialGradient,
-    QTransform)
-from PySide6.QtWidgets import (QApplication, QGridLayout, QVBoxLayout, QHeaderView, QLabel,
-    QMainWindow, QMenu, QMenuBar, QSizePolicy, QLineEdit, QPushButton, QMessageBox, QDialog, QDialogButtonBox,
-    QStackedWidget, QStatusBar, QTableView, QWidget, QComboBox)
-from .modules import PandasModel, fetch_db_pd, neu_mieter, create_mieter, create_wohnung
 import re
 
-class add_mieter(QDialog):
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
+from PySide6.QtGui import (QAction, QFont)
+from PySide6.QtWidgets import (QComboBox, QDialog,
+                               QDialogButtonBox, QGridLayout,
+                               QLabel, QLineEdit, QMenu, QMenuBar,
+                               QMessageBox, QPushButton, 
+                               QStackedWidget, QStatusBar, QTableView,
+                               QVBoxLayout, QWidget)
+
+from .modules import PandasModel, create_mieter, create_wohnung, fetch_db_pd, fetch_data, update_wohnung, update_mieter
+
+class dlg_add_mieter(QDialog):
     def __init__(self) -> None:
         super().__init__()
         layout = QGridLayout()
+        self.setWindowTitle("Mieter*in hinzufügen")
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.action_ok)
@@ -119,7 +119,7 @@ class add_mieter(QDialog):
         pdData = fetch_db_pd('Vermietung')
         for i, row in pdData.iterrows():
             self.cmb_weid.addItem(str(row[1]))
-        
+
     def action_ok(self):
         valid = re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
         if valid:
@@ -156,10 +156,156 @@ class add_mieter(QDialog):
             dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
             button = dlg.exec_()
 
-class add_wohnung(QDialog):
+class dlg_update_mieter(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Mieter*in bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_mieter = QLabel("Mieter*in bearbeiten")
+        self.lbl_add_mieter.setObjectName(u"lbl_add_mieter")
+        layout.addWidget(self.lbl_add_mieter,0,0)
+        self.lbl_weid = QLabel("WE-ID")
+        self.lbl_weid.setObjectName(u"lbl_weid")
+        layout.addWidget(self.lbl_weid,1,0)
+        self.cmb_weid = QComboBox(self)
+        self.cmb_weid.setObjectName(u"cmb_weid")
+        self.cmb_weid.setEditable(True)
+        layout.addWidget(self.cmb_weid,1,1)
+        self.lbl_nummer = QLabel("Wohnungsnummer")
+        self.lbl_nummer.setObjectName(u"lbl_nummer")
+        layout.addWidget(self.lbl_nummer,2,0)
+        self.cmb_nummer = QComboBox(self)
+        self.cmb_nummer.setObjectName(u"cmb_nummer")
+        self.cmb_nummer.setEditable(True)
+        layout.addWidget(self.cmb_nummer,2,1)
+        self.lbl_vorname = QLabel("Vorname")
+        self.lbl_vorname.setObjectName(u"lbl_vorname")
+        layout.addWidget(self.lbl_vorname,3,0)
+        self.cmb_vorname = QComboBox(self)
+        self.cmb_vorname.setObjectName(u"cmb_vorname")
+        self.cmb_vorname.setEditable(True)
+        layout.addWidget(self.cmb_vorname,3,1)
+        self.lbl_name = QLabel("Name")
+        self.lbl_name.setObjectName(u"lbl_name")
+        layout.addWidget(self.lbl_name,4,0)
+        self.cmb_name = QComboBox(self)
+        self.cmb_name.setObjectName(u"cmb_name")
+        self.cmb_name.setEditable(True)
+        layout.addWidget(self.cmb_name,4,1)
+        self.lbl_strasse = QLabel("Straße")
+        self.lbl_strasse.setObjectName(u"lbl_strasse")
+        layout.addWidget(self.lbl_strasse,5,0)
+        self.cmb_strasse = QComboBox(self)
+        self.cmb_strasse.setObjectName(u"cmb_strasse")
+        self.cmb_strasse.setEditable(True)
+        layout.addWidget(self.cmb_strasse,5,1)
+        self.lbl_hausnummer = QLabel("Hausnummer")
+        self.lbl_hausnummer.setObjectName(u"lbl_hausnummer")
+        layout.addWidget(self.lbl_hausnummer,6,0)
+        self.cmb_hausnummer = QComboBox(self)
+        self.cmb_hausnummer.setObjectName(u"cmb_hausnummer")
+        self.cmb_hausnummer.setEditable(True)
+        layout.addWidget(self.cmb_hausnummer,6,1)
+        self.lbl_plz = QLabel("Postleitzahl")
+        self.lbl_plz.setObjectName(u"lbl_plz")
+        layout.addWidget(self.lbl_plz,7,0)
+        self.cmb_plz = QComboBox(self)
+        self.cmb_plz.setObjectName(u"cmb_plz")
+        self.cmb_plz.setEditable(True)
+        layout.addWidget(self.cmb_plz,7,1)
+        self.lbl_ort = QLabel("Ort")
+        self.lbl_ort.setObjectName(u"lbl_ort")
+        layout.addWidget(self.lbl_ort,8,0)
+        self.cmb_ort = QComboBox(self)
+        self.cmb_ort.setObjectName(u"cmb_ort")
+        self.cmb_ort.setEditable(True)
+        layout.addWidget(self.cmb_ort,8,1)
+        self.lbl_mietbeginn = QLabel("Mietbeginn")
+        self.lbl_mietbeginn.setObjectName(u"lbl_mietbeginn")
+        layout.addWidget(self.lbl_mietbeginn,9,0)
+        self.cmb_mietbeginn = QComboBox(self)
+        self.cmb_mietbeginn.setObjectName(u"cmb_mietbeginn")
+        self.cmb_mietbeginn.setEditable(True)
+        layout.addWidget(self.cmb_mietbeginn,9,1)
+        self.lbl_mietende = QLabel("Mietende")
+        self.lbl_mietende.setObjectName(u"lbl_mietende")
+        layout.addWidget(self.lbl_mietende,10,0)
+        self.cmb_mietende = QComboBox(self)
+        self.cmb_mietende.setObjectName(u"cmb_mietende")
+        self.cmb_mietende.setEditable(True)
+        layout.addWidget(self.cmb_mietende,10,1)
+        self.lbl_personen = QLabel("Anzahl Personen")
+        self.lbl_personen.setObjectName(u"lbl_personen")
+        layout.addWidget(self.lbl_personen,11,0)
+        self.cmb_personen = QComboBox(self)
+        self.cmb_personen.setObjectName(u"cmb_personen")
+        self.cmb_personen.setEditable(True)
+        layout.addWidget(self.cmb_personen,11,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Vermietung',id)
+        #self.cmb_id.addItem(str(data[0][0]))
+        self.cmb_weid.addItem(str(data[0][1]))
+        self.cmb_nummer.addItem(str(data[0][2]))
+        self.cmb_vorname.addItem(str(data[0][3]))
+        self.cmb_name.addItem(str(data[0][4]))
+        self.cmb_strasse.addItem(str(data[0][5]))
+        self.cmb_hausnummer.addItem(str(data[0][6]))
+        self.cmb_plz.addItem(str(data[0][7]))
+        self.cmb_ort.addItem(str(data[0][8]))
+        self.cmb_mietbeginn.addItem(str(data[0][9]))
+        self.cmb_mietende.addItem(str(data[0][10]))
+        self.cmb_personen.addItem(str(data[0][11]))
+
+    def action_ok(self):
+        valid = re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Vermietung')
+            pdData['WEID'] = pdData['WEID'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Die WE-ID gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_weid.currentText() in pdData['WEID'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Vermietung', x)
+                weid, wohnung = self.cmb_weid.currentText(), self.cmb_nummer.currentText()
+                vorname, name = self.cmb_vorname.currentText(), self.cmb_name.currentText()
+                strasse, hausnummer = self.cmb_strasse.currentText(), self.cmb_hausnummer.currentText()
+                plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.cmb_mietbeginn.currentText()
+                mietende, personen = self.cmb_mietende.currentText(), self.cmb_personen.currentText()
+                mieter =(weid,wohnung,vorname,name,strasse,hausnummer,plz, ort, mietbeginn, mietende, personen, data[0][0])
+                update_mieter(mieter)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_add_wohnung(QDialog):
     def __init__(self):
         super().__init__()
         layout = QGridLayout()
+        self.setWindowTitle("Neue Wohnung hinzufügen")
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.action_ok)
@@ -199,9 +345,9 @@ class add_wohnung(QDialog):
         
         self.setLayout(layout)
         
-        pdData = fetch_db_pd('Wohnungen')
-        for i, row in pdData.iterrows():
-            self.cmb_nummer.addItem(str(row[1]))
+        # pdData = fetch_db_pd('Wohnungen')
+        # for i, row in pdData.iterrows():
+        #     self.cmb_nummer.addItem(str(row[1]))
         pdData = fetch_db_pd('Stockwerke')
         for i, row in pdData.iterrows():
             self.cmb_stockwerk.addItem(str(row[1]))
@@ -229,10 +375,84 @@ class add_wohnung(QDialog):
             else:
                 wohnung = (self.cmb_nummer.currentText(), self.cmb_stockwerk.currentText(), self.cmb_qm.currentText(), self.cmb_zimmer.currentText())
                 create_wohnung(wohnung)
-                #neu_wohnung(self.cmb_nummer.currentText(), self.cmb_stockwerk.currentText(), self.cmb_qm.currentText(), self.cmb_zimmer.currentText())
-                #model = PandasModel(pdData[['Nummer', 'Stockwerk', 'qm', 'Zimmer']])
                 msg_ok()    
                 self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format x.x ("0.1", "2.4") sein')
+            button = dlg.exec_()
+
+class dlg_update_wohnung(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Wohnung bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,6,1)
+        self.lbl_edit_wohnung = QLabel("Wohnung bearbeiten")
+        self.lbl_edit_wohnung.setObjectName(u"lbl_edit_wohnung")
+        layout.addWidget(self.lbl_edit_wohnung,0,0)
+        self.lbl_id = QLabel("ID")
+        self.lbl_id.setObjectName(u"lbl_id")
+        layout.addWidget(self.lbl_id,1,0)
+        self.cmb_id = QComboBox(self)
+        self.cmb_id.setObjectName(u"cmb_id")
+        self.cmb_id.setEditable(False)
+        layout.addWidget(self.cmb_id,1,1)
+        self.lbl_nummer = QLabel("Nummer")
+        self.lbl_nummer.setObjectName(u"lbl_nummer")
+        layout.addWidget(self.lbl_nummer,2,0)
+        self.lbl_stockwerk = QLabel("Stockwerk")
+        self.lbl_stockwerk.setObjectName(u"lbl_stockwerk")
+        layout.addWidget(self.lbl_stockwerk,3,0)
+        self.cmb_nummer = QComboBox(self)
+        self.cmb_nummer.setObjectName(u"cmb_nummer")
+        self.cmb_nummer.setEditable(True)
+        layout.addWidget(self.cmb_nummer,2,1)
+        self.cmb_stockwerk = QComboBox(self)
+        self.cmb_stockwerk.setObjectName(u"cmb_stockwerk")
+        self.cmb_stockwerk.setEditable(True)
+        layout.addWidget(self.cmb_stockwerk,3,1)
+        self.cmb_qm = QComboBox(self)
+        self.cmb_qm.setObjectName(u"cmb_qm")
+        self.cmb_qm.setEditable(True)
+        layout.addWidget(self.cmb_qm,4,1)
+        self.lbl_qm = QLabel("Grö0e in qm")
+        self.lbl_qm.setObjectName(u"lbl_qm")
+        layout.addWidget(self.lbl_qm,4,0)
+        self.lbl_zimmer = QLabel("Anzahl Zimmer")
+        self.lbl_zimmer.setObjectName(u"lbl_zimmer")
+        layout.addWidget(self.lbl_zimmer,5,0)
+        self.cmb_zimmer = QComboBox(self)
+        self.cmb_zimmer.setObjectName(u"cmb_zimmer")
+        self.cmb_zimmer.setEditable(True)
+        layout.addWidget(self.cmb_zimmer,5,1)
+        self.setLayout(layout)
+ 
+        data = fetch_data('Wohnungen',id)
+        self.cmb_id.addItem(str(data[0][0]))
+        self.cmb_nummer.addItem(str(data[0][1]))
+        self.cmb_stockwerk.addItem(str(data[0][2]))
+        self.cmb_qm.addItem(str(data[0][3]))
+        self.cmb_zimmer.addItem(str(data[0][4]))
+    
+    def action_ok(self):
+        valid = re.match(r'^\d{1}\.\d{1,2}$', self.cmb_nummer.currentText())
+        if valid:          
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde aktualisiert")
+                button = dlg.exec_()
+            
+            wohnung = (self.cmb_nummer.currentText(), self.cmb_stockwerk.currentText(), self.cmb_qm.currentText(), self.cmb_zimmer.currentText(), int(self.cmb_id.currentText()))
+            update_wohnung(wohnung)
+            msg_ok()    
+            self.accept()
         else:
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
@@ -400,10 +620,31 @@ class Ui_frm_main(object):
         self.lbl_vermietung.setFont(font)
         self.lbl_vermietung.setAlignment(Qt.AlignCenter)
         self.btn_vermietung_add = QPushButton(self.p_vermietung)
-        self.btn_vermietung_add.setObjectName(u"btn_wohnungen_add")
+        self.btn_vermietung_add.setObjectName(u"btn_vermietung_add")
         self.btn_vermietung_add.setGeometry(QRect(50,450,150,25))
+        self.btn_vermietung_edit = QPushButton(self.p_vermietung)
+        self.btn_vermietung_edit.setObjectName(u"btn_vermietung_edit")
+        self.btn_vermietung_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_vermietung)
-                      
+
+        self.p_wohnungen = QWidget()
+        self.p_wohnungen.setObjectName(u"p_wohnungen")
+        self.tbl_wohnungen = QTableView(self.p_wohnungen)
+        self.tbl_wohnungen.setObjectName(u"tbl_wohnungen")
+        self.tbl_wohnungen.setGeometry(QRect(10, 30, 760, 350))
+        self.lbl_wohnungen = QLabel(self.p_wohnungen)
+        self.lbl_wohnungen.setObjectName(u"lbl_wohnungen")
+        self.lbl_wohnungen.setGeometry(QRect(0, 0, 780, 20))
+        self.lbl_wohnungen.setFont(font)
+        self.lbl_wohnungen.setAlignment(Qt.AlignCenter)
+        self.btn_wohnungen_add = QPushButton(self.p_wohnungen)
+        self.btn_wohnungen_add.setObjectName(u"btn_wohnungen_add")
+        self.btn_wohnungen_add.setGeometry(QRect(50,450,150,25))
+        self.btn_wohnungen_edit =QPushButton(self.p_wohnungen)
+        self.btn_wohnungen_edit.setObjectName(u'btn_test')
+        self.btn_wohnungen_edit.setGeometry(QRect(250,450,150,25))
+        self.stackedWidget.addWidget(self.p_wohnungen)
+         
         self.p_zaehler = QWidget()
         self.p_zaehler.setObjectName(u"p_zaehler")
         self.tbl_zaehler = QTableView(self.p_zaehler)
@@ -428,21 +669,6 @@ class Ui_frm_main(object):
         self.lbl_zaehlertypen.setAlignment(Qt.AlignCenter)
         self.stackedWidget.addWidget(self.p_zaehlertypen)
         
-        self.p_wohnungen = QWidget()
-        self.p_wohnungen.setObjectName(u"p_wohnungen")
-        self.tbl_wohnungen = QTableView(self.p_wohnungen)
-        self.tbl_wohnungen.setObjectName(u"tbl_wohnungen")
-        self.tbl_wohnungen.setGeometry(QRect(10, 30, 760, 350))
-        self.lbl_wohnungen = QLabel(self.p_wohnungen)
-        self.lbl_wohnungen.setObjectName(u"lbl_wohnungen")
-        self.lbl_wohnungen.setGeometry(QRect(0, 0, 780, 20))
-        self.lbl_wohnungen.setFont(font)
-        self.lbl_wohnungen.setAlignment(Qt.AlignCenter)
-        self.btn_wohnungen_add = QPushButton(self.p_wohnungen)
-        self.btn_wohnungen_add.setObjectName(u"btn_wohnungen_add")
-        self.btn_wohnungen_add.setGeometry(QRect(50,450,150,25))
-        self.stackedWidget.addWidget(self.p_wohnungen)
-
         self.gridLayout.addWidget(self.stackedWidget, 0, 0, 1, 1)
 
         frm_main.setCentralWidget(self.centralwidget)
@@ -519,8 +745,10 @@ class Ui_frm_main(object):
         self.lbl_stockwerke.setText(QCoreApplication.translate("frm_main", u"Stockwerke", None))
         self.lbl_vermietung.setText(QCoreApplication.translate("frm_main", u"Vermietung", None))
         self.btn_vermietung_add.setText(QCoreApplication.translate("frm_main",u"Neue*r Mieter*in", None))
+        self.btn_vermietung_edit.setText(QCoreApplication.translate("frm_main", u"Mieter*in bearbeiten",None))
         self.lbl_wohnungen.setText(QCoreApplication.translate("frm_main", u"Wohnungen", None))
         self.btn_wohnungen_add.setText(QCoreApplication.translate("frm_main",u"Neue Wohnung", None))
+        self.btn_wohnungen_edit.setText(QCoreApplication.translate("frm_main",u"Wohnung bearbeiten", None))
         self.lbl_zaehler.setText(QCoreApplication.translate("frm_main", u"Z\u00e4hler", None))
         self.lbl_zaehlertypen.setText(QCoreApplication.translate("frm_main", u"Z\u00e4hlertypen", None))
         self.menuDatei.setTitle(QCoreApplication.translate("frm_main", u"Datei", None))
