@@ -7,17 +7,53 @@ Created on Sun Oct 30 19:17:31 2022
 """
 
 import sqlite3
+
 import pandas as pd
 from pandas.tseries.offsets import Day
 from PySide6 import QtGui
 from PySide6.QtCore import Qt
 
+
 def fetch_db_pd(t):
-    conn = sqlite3.connect('NKA13HA/standard.sqlite')
-    pd_tmp = pd.read_sql("SELECT * FROM " + t + ";", conn)
-    conn.close()
+    try:
+        conn = sqlite3.connect('standard.sqlite')
+        print("Verbindung zu SQLite hergestellt")
+        pd_tmp = pd.read_sql("SELECT * FROM " + t + ";", conn)
+    
+    except sqlite3.Error as error:
+        print("Fehler beim Laden in Dataframe", error)
+
+    finally:
+        if conn:
+            conn.close()
+            print("SQLite geschlossen")
     return pd_tmp
 
+def fetch_data(table,id):
+    """
+    Liest einen Datensatz aus einer tabelle
+    :param table:
+    :param id:
+    :return: data
+    """
+    try:
+        database = 'standard.sqlite'
+        conn = create_connection(database)
+        cur = conn.cursor()
+        sql = 'SELECT * FROM {} WHERE id = {}'.format(table, id)
+        cur.execute(sql)
+        data = cur.fetchall()
+        print("Daten erfolgreich eingelesen")
+        cur.close()
+        
+    except sqlite3.Error as error:
+        print("fetch_data. Fehler beim Ausführen der SQL Query:",error)
+    finally:
+        if conn:
+            conn.close()
+            print("SQLite geschlossen")
+    return data
+    
 def create_connection(db_file):
     """ create a database connection to the SQLite database
         specified by db_file
@@ -27,8 +63,9 @@ def create_connection(db_file):
     conn = None
     try:
         conn = sqlite3.connect(db_file)
-    except sqlite3.Error as e:
-        print(e)
+        print("Verbindung zu SQLite hergestellt")
+    except sqlite3.Error as error:
+        print("Fehler beim Verbinden mit der Datenbank",error)
 
     return conn
 
@@ -39,13 +76,23 @@ def create_wohnung(wohnung):
     :param wohnung:
     :return: wohnung id
     """
-    database = 'NKA13HA/standard.sqlite'
-    conn = create_connection(database)
-    sql = ''' INSERT INTO Wohnungen(Nummer, Stockwerk, qm, Zimmer)
-              VALUES(?,?,?,?) '''
-    cur = conn.cursor()
-    cur.execute(sql, wohnung)
-    conn.commit()
+    try:
+        database = 'standard.sqlite'
+        conn = create_connection(database)
+        sql = ''' INSERT INTO Wohnungen(Nummer, Stockwerk, qm, Zimmer)
+                VALUES(?,?,?,?) '''
+        cur = conn.cursor()
+        cur.execute(sql, wohnung)
+        conn.commit()
+        print("SQLite INSERT erfolgreich")
+    
+    except sqlite3.Error as error:
+        print("SQLite Fehler beim INSERT",error)
+        
+    finally:
+        if conn:
+            conn.close()
+            print("SQLite geschlossen")
     return cur.lastrowid
 
 def create_mieter(mieter):
@@ -54,74 +101,81 @@ def create_mieter(mieter):
     :param mieter (WEID, Wohnung, Vorname, Name, Strasse, Hausnummer, Plz, Ort, Mietbeginn, Mietende, Personen):
     :return: mieter id
     """
-    database = 'NKA13HA/standard.sqlite'
-    conn = create_connection(database)
-    sql = ''' INSERT INTO Vermietung(WEID, Wohnung, Vorname, Name, Strasse, Hausnummer, Plz, Ort, Mietbeginn, Mietende, Personen)
-              VALUES(?,?,?,?,?,?,?,?,?,?,?) '''
-    cur = conn.cursor()
-    cur.execute(sql, mieter)
-    conn.commit()
+    try:
+        database = 'standard.sqlite'
+        conn = create_connection(database)
+        sql = ''' INSERT INTO Vermietung(WEID, Wohnung, Vorname, Name, Strasse, Hausnummer, Plz, Ort, Mietbeginn, Mietende, Personen)
+                VALUES(?,?,?,?,?,?,?,?,?,?,?) '''
+        cur = conn.cursor()
+        cur.execute(sql, mieter)
+        conn.commit()
+        print("SQLite INSERT erfolgreich")
+        
+    except sqlite3.Error as error:
+        print("SQLite Fehler beim INSERT",error)
+        
+    finally:
+        if conn:
+            conn.close()
+            print("SQLite geschlossen")        
     return cur.lastrowid
 
-def update_wohnung(conn, wohnung):
-    """
-    Aktualisiert einen Eintrag in der Wohnungen Tabelle
-    :param conn:
-    :param wohnung:
-    :return: wohnung id
-    """
-    sql = ''' UPDATE Wohnungen
-              SET Nummer = ?,
-                  Stockwerk = ?,
-                  qm = ?,
-                  Zimmer = ?
-              WHERE id = ?'''
-    cur = conn.cursor()
-    cur.execute(sql, wohnung)
-    conn.commit()
+def update_wohnung(data):
+    print(data)
+    try:
+        database = 'standard.sqlite'
+        conn = create_connection(database)
+        cur = conn.cursor()
 
-def update_mieter(mieter):
+        sql_update_query = """Update Wohnungen set Nummer = ?, Stockwerk = ?, qm = ?, Zimmer = ? where id = ?"""
+        cur.execute(sql_update_query, data)
+        conn.commit()
+        print("SQLite UPDATE erfolgreich")
+        cur.close()
+
+    except sqlite3.Error as error:
+        print("SQLite Fehler beim UPDATE",error)
+    finally:
+        if conn:
+            conn.close()
+            print("SQLite geschlossen")      
+
+def update_mieter(data):
     """
     Aktualisiert einen Eintrag in der Vermietung Tabelle
     :param conn:
     :param mieter:
     :return: mieter id
     """
-    database = 'NKA13HA/standard.sqlite'
-    conn = create_connection(database)
-    sql = ''' UPDATE Vermietung
-              SET WEID = ?,
-                  Wohnung = ?,
-                  Vorname = ?,
-                  Name = ?,
-                  Strasse = ?,
-                  Hausnummer = ?,
-                  Plz = ?,
-                  Ort = ?,
-                  Mietbeginn = ?,
-                  Mietende = ?,
-                  Personen = ?
-              WHERE id = ?'''
-    cur = conn.cursor()
-    cur.execute(sql, mieter)
-    conn.commit()
+    try:
+        database = 'standard.sqlite'
+        conn = create_connection(database)
+        sql_update_query = ''' UPDATE Vermietung
+                                SET WEID = ?,
+                                    Wohnung = ?,
+                                    Vorname = ?,
+                                    Name = ?,
+                                    Strasse = ?,
+                                    Hausnummer = ?,
+                                    Plz = ?,
+                                    Ort = ?,
+                                    Mietbeginn = ?,
+                                    Mietende = ?,
+                                    Personen = ?
+                                WHERE id = ?'''
+        cur = conn.cursor()
+        cur.execute(sql_update_query, data)
+        conn.commit()
+        print("SQLite UPDATE erfolgreich")
+        cur.close()
 
-def neu_mieter(WEID, Wohnung, Vorname, Name, Strasse, Hausnummer, Plz, Ort, Mietbeginn, Mietende, Personen):
-    database = 'NKA13HA/standard.sqlite'
-    conn = create_connection(database)
-    with conn:
-        mieter = (WEID, Wohnung, Vorname, Name, Strasse, Hausnummer, Plz, Ort, Mietbeginn, Mietende, Personen);
-        mieter_id = create_mieter(conn, mieter)
-    conn.close()
-
-# def neu_wohnung(nummer,stock,qm,zimmer):
-#     database = 'NKA13HA/standard.sqlite'
-#     conn = create_connection(database)
-#     with conn:
-#         wohnung = (nummer, stock, qm, zimmer);
-#         wohnung_id = create_wohnung(conn, wohnung)
-#     conn.close()
-
+    except sqlite3.Error as error:
+        print("SQLite Fehler beim UPDATE",error)
+    finally:
+        if conn:
+            conn.close()
+            print("SQLite geschlossen")
+    
 class PandasModel(QtGui.QStandardItemModel):
     def __init__(self, data, parent=None):
         QtGui.QStandardItemModel.__init__(self, parent)
