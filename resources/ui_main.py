@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QComboBox, QDialog,
                                QStackedWidget, QStatusBar, QTableView,
                                QVBoxLayout, QWidget)
 
-from .modules import PandasModel, create_mieter, create_wohnung, fetch_db_pd, fetch_data, update_wohnung, update_mieter
+from .modules import PandasModel, sql_insert, sql_update, fetch_db_pd, fetch_data
 
 class dlg_add_mieter(QDialog):
     def __init__(self) -> None:
@@ -147,7 +147,7 @@ class dlg_add_mieter(QDialog):
                 plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.cmb_mietbeginn.currentText()
                 mietende, personen = self.cmb_mietende.currentText(), self.cmb_personen.currentText()
                 mieter =(weid,wohnung,vorname,name,strasse,hausnummer,plz, ort, mietbeginn, mietende, personen)
-                create_mieter(mieter)
+                sql_insert('Vermietung',mieter)
                 msg_ok()    
                 self.accept()
         else:
@@ -292,7 +292,7 @@ class dlg_update_mieter(QDialog):
                 plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.cmb_mietbeginn.currentText()
                 mietende, personen = self.cmb_mietende.currentText(), self.cmb_personen.currentText()
                 mieter =(weid,wohnung,vorname,name,strasse,hausnummer,plz, ort, mietbeginn, mietende, personen, data[0][0])
-                update_mieter(mieter)
+                sql_update('Vermietung',mieter)
                 msg_ok()    
                 self.accept()
         else:
@@ -374,7 +374,7 @@ class dlg_add_wohnung(QDialog):
                 msg_exist()
             else:
                 wohnung = (self.cmb_nummer.currentText(), self.cmb_stockwerk.currentText(), self.cmb_qm.currentText(), self.cmb_zimmer.currentText())
-                create_wohnung(wohnung)
+                sql_insert('Wohnungen',wohnung)
                 msg_ok()    
                 self.accept()
         else:
@@ -450,7 +450,7 @@ class dlg_update_wohnung(QDialog):
                 button = dlg.exec_()
             
             wohnung = (self.cmb_nummer.currentText(), self.cmb_stockwerk.currentText(), self.cmb_qm.currentText(), self.cmb_zimmer.currentText(), int(self.cmb_id.currentText()))
-            update_wohnung(wohnung)
+            sql_update('Wohnungen',wohnung)
             msg_ok()    
             self.accept()
         else:

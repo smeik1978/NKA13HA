@@ -69,20 +69,50 @@ def create_connection(db_file):
 
     return conn
 
-
-def create_wohnung(wohnung):
+def create_sql_schema():
+    d_schema = {}
+    database = 'standard.sqlite'
+    conn = create_connection(database)
+    cur = conn.cursor()
+    table = pd.read_sql_query("SELECT name FROM sqlite_master WHERE type='table';", conn)
+    for index, row in table.iterrows():
+        pd_meta = pd.read_sql_query("PRAGMA table_info("+row['name']+")",conn, index_col='cid')
+        d_schema[row['name']] = dict(zip(pd_meta['name'],pd_meta['type']))
+    conn.close()
+    return d_schema
+    
+def query_structure(t):
+    schema = create_sql_schema()
+    table = schema[t]
+    keys = list(table)
+    keys.remove('id')
+    insert = ' '.join(keys)
+    update = ' '.join(keys)
+    insert = insert.replace(" ",", ")
+    update = update.replace(" "," = ?, ")
+    update += " = ?"
+    qmrks = ""
+    for i in range(len(keys)):
+        qmrks += "?,"
+    qmrks = qmrks[0:-1]
+    query = {}
+    query['insert'] = "INSERT INTO "+t+"("+insert+") VALUES("+qmrks+")"
+    query['update'] = "UPDATE "+t+" SET "+update+" WHERE id = ?"
+    return query
+  
+def sql_insert(table_name, data):
     """
-    Erstellt einen neuen Eintrag in der Wohnungen Tabelle
-    :param wohnung:
-    :return: wohnung id
+    Erstellt einen neuen Eintrag in einer Tabelle
+    :param :
+    :return: db id
     """
     try:
         database = 'standard.sqlite'
         conn = create_connection(database)
-        sql = ''' INSERT INTO Wohnungen(Nummer, Stockwerk, qm, Zimmer)
-                VALUES(?,?,?,?) '''
+        query = query_structure(table_name)
+        sql = query['insert']
         cur = conn.cursor()
-        cur.execute(sql, wohnung)
+        cur.execute(sql, data)
         conn.commit()
         print("SQLite INSERT erfolgreich")
     
@@ -95,76 +125,15 @@ def create_wohnung(wohnung):
             print("SQLite geschlossen")
     return cur.lastrowid
 
-def create_mieter(mieter):
-    """
-    Erstellt einen neuen Eintrag in der Vermietung Tabelle
-    :param mieter (WEID, Wohnung, Vorname, Name, Strasse, Hausnummer, Plz, Ort, Mietbeginn, Mietende, Personen):
-    :return: mieter id
-    """
-    try:
-        database = 'standard.sqlite'
-        conn = create_connection(database)
-        sql = ''' INSERT INTO Vermietung(WEID, Wohnung, Vorname, Name, Strasse, Hausnummer, Plz, Ort, Mietbeginn, Mietende, Personen)
-                VALUES(?,?,?,?,?,?,?,?,?,?,?) '''
-        cur = conn.cursor()
-        cur.execute(sql, mieter)
-        conn.commit()
-        print("SQLite INSERT erfolgreich")
-        
-    except sqlite3.Error as error:
-        print("SQLite Fehler beim INSERT",error)
-        
-    finally:
-        if conn:
-            conn.close()
-            print("SQLite geschlossen")        
-    return cur.lastrowid
-
-def update_wohnung(data):
+def sql_update(table_name,data):
     print(data)
     try:
         database = 'standard.sqlite'
         conn = create_connection(database)
         cur = conn.cursor()
-
-        sql_update_query = """Update Wohnungen set Nummer = ?, Stockwerk = ?, qm = ?, Zimmer = ? where id = ?"""
-        cur.execute(sql_update_query, data)
-        conn.commit()
-        print("SQLite UPDATE erfolgreich")
-        cur.close()
-
-    except sqlite3.Error as error:
-        print("SQLite Fehler beim UPDATE",error)
-    finally:
-        if conn:
-            conn.close()
-            print("SQLite geschlossen")      
-
-def update_mieter(data):
-    """
-    Aktualisiert einen Eintrag in der Vermietung Tabelle
-    :param conn:
-    :param mieter:
-    :return: mieter id
-    """
-    try:
-        database = 'standard.sqlite'
-        conn = create_connection(database)
-        sql_update_query = ''' UPDATE Vermietung
-                                SET WEID = ?,
-                                    Wohnung = ?,
-                                    Vorname = ?,
-                                    Name = ?,
-                                    Strasse = ?,
-                                    Hausnummer = ?,
-                                    Plz = ?,
-                                    Ort = ?,
-                                    Mietbeginn = ?,
-                                    Mietende = ?,
-                                    Personen = ?
-                                WHERE id = ?'''
-        cur = conn.cursor()
-        cur.execute(sql_update_query, data)
+        query = query_structure(table_name)
+        sql = query['update']
+        cur.execute(sql, data)
         conn.commit()
         print("SQLite UPDATE erfolgreich")
         cur.close()
