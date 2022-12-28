@@ -21,6 +21,571 @@ from PySide6.QtWidgets import (QComboBox, QDialog,
 
 from .modules import PandasModel, sql_insert, sql_update, fetch_db_pd, fetch_data
 
+class dlg_add_einheiten(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Einheiten hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_einheiten = QLabel("Einheiten hinzufügen")
+        self.lbl_add_einheiten.setObjectName(u"lbl_add_einheiten")
+        layout.addWidget(self.lbl_add_einheiten,0,0)
+        self.lbl_einheit = QLabel("Einheit")
+        self.lbl_einheit.setObjectName(u"lbl_einheit")
+        layout.addWidget(self.lbl_einheit,1,0)
+        self.cmb_einheit = QComboBox(self)
+        self.cmb_einheit.setObjectName(u"cmb_einheit")
+        self.cmb_einheit.setEditable(True)
+        layout.addWidget(self.cmb_einheit,1,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Einheiten')
+        for i, row in pdData.iterrows():
+            self.cmb_einheit.addItem(str(row[1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_einheit.currentText())
+        if valid:
+            pdData = fetch_db_pd('Einheiten')
+            pdData['Einheit'] = pdData['Einheit'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese Einheit gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_einheit.currentText() in pdData['Einheit'].values:
+                msg_exist()
+            else:
+                einheit = self.cmb_einheit.currentText()
+                einheiten =([einheit]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+                sql_insert('Einheiten',einheiten)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_einheiten(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Einheiten bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_einheiten = QLabel("Einheit bearbeiten")
+        self.lbl_edit_einheiten.setObjectName(u"lbl_edit_einheiten")
+        layout.addWidget(self.lbl_edit_einheiten,0,0)
+        self.lbl_einheit = QLabel("Einheit")
+        self.lbl_einheit.setObjectName(u"lbl_einheit")
+        layout.addWidget(self.lbl_einheit,1,0)
+        self.cmb_einheit = QComboBox(self)
+        self.cmb_einheit.setObjectName(u"cmb_einheit")
+        self.cmb_einheit.setEditable(True)
+        layout.addWidget(self.cmb_einheit,1,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Einheiten',id)
+        self.cmb_einheit.addItem(str(data[0][1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Einheiten')
+            pdData['Einheit'] = pdData['Einheit'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese Einheit gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_einheit.currentText() in pdData['Einheit'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Einheiten', x)
+                einheit = self.cmb_einheit.currentText()
+                einheiten =(einheit)
+                einheiten =(einheiten, data[0][0])
+                sql_update('Einheiten',einheiten)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_add_gemeinschaft(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Gemeinschaftsfläche hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_gemeinschaft = QLabel("Hinzufügen")
+        self.lbl_add_gemeinschaft.setObjectName(u"lbl_add_gemeinschaft")
+        layout.addWidget(self.lbl_add_gemeinschaft,0,0)
+        self.lbl_bezeichnung = QLabel("Bezeichnung")
+        self.lbl_bezeichnung.setObjectName(u"lbl_bezeichnung")
+        layout.addWidget(self.lbl_bezeichnung,1,0)
+        self.cmb_bezeichnung = QComboBox(self)
+        self.cmb_bezeichnung.setObjectName(u"cmb_bezeichnung")
+        self.cmb_bezeichnung.setEditable(True)
+        layout.addWidget(self.cmb_bezeichnung,1,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Gemeinschaftsflaechen')
+        for i, row in pdData.iterrows():
+            self.cmb_bezeichnung.addItem(str(row[1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_einheit.currentText())
+        if valid:
+            pdData = fetch_db_pd('Gemeinschaftsflaechen')
+            pdData['Bezeichnung'] = pdData['Bezeichnung'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese Bezeichnung gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_bezeichnung.currentText() in pdData['Bezeichnung'].values:
+                msg_exist()
+            else:
+                bezeichnung = self.cmb_bezeichnung.currentText()
+                gemeinschaft =([bezeichnung]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+                sql_insert('Gemeinschaftsflaechen',gemeinschaft)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_gemeinschaft(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Gemeinschaftsflächen bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_gemeinschaft = QLabel("Bearbeiten")
+        self.lbl_edit_gemeinschaft.setObjectName(u"lbl_edit_gemeinschaft")
+        layout.addWidget(self.lbl_edit_gemeinschaft,0,0)
+        self.lbl_bezeichnung = QLabel("Bezeichnung")
+        self.lbl_bezeichnung.setObjectName(u"lbl_bezeichnung")
+        layout.addWidget(self.lbl_bezeichnung,1,0)
+        self.cmb_bezeichnung = QComboBox(self)
+        self.cmb_bezeichnung.setObjectName(u"cmb_bezeichnung")
+        self.cmb_bezeichnung.setEditable(True)
+        layout.addWidget(self.cmb_bezeichnung,1,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Gemeinschaftsflaechen',id)
+        self.cmb_bezeichnung.addItem(str(data[0][1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Gemeinschaftsflaechen')
+            pdData['Bezeichnung'] = pdData['Bezeichnung'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese Bezeichnung gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_bezeichnung.currentText() in pdData['Bezeichnung'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Gemeinschaftsflaechen', x)
+                bezeichnung = self.cmb_bezeichnung.currentText()
+                gemeinschaft =(bezeichnung)
+                gemeinschaft =(gemeinschaft, data[0][0])
+                sql_update('Gemeinschaftsflaechen',gemeinschaft)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_add_kosten(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Kosten hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_kosten = QLabel("Kosten hinzufügen")
+        self.lbl_add_kosten.setObjectName(u"lbl_add_kosten")
+        layout.addWidget(self.lbl_add_kosten,0,0)
+        self.lbl_datum = QLabel("Datum")
+        self.lbl_datum.setObjectName(u"lbl_datum")
+        layout.addWidget(self.lbl_datum,1,0)
+        self.cmb_datum = QComboBox(self)
+        self.cmb_datum.setObjectName(u"cmb_datum")
+        self.cmb_datum.setEditable(True)
+        layout.addWidget(self.cmb_datum,1,1)
+        self.lbl_kostenart = QLabel("Kostenart")
+        self.lbl_kostenart.setObjectName(u"lbl_kostenart")
+        layout.addWidget(self.lbl_kostenart,2,0)
+        self.cmb_kostenart = QComboBox(self)
+        self.cmb_kostenart.setObjectName(u"cmb_kostenart")
+        self.cmb_kostenart.setEditable(False)
+        layout.addWidget(self.cmb_kostenart,2,1)
+        self.lbl_firma = QLabel("Firma")
+        self.lbl_firma.setObjectName(u"lbl_firma")
+        layout.addWidget(self.lbl_firma,3,0)
+        self.cmb_firma = QComboBox(self)
+        self.cmb_firma.setObjectName(u"cmb_firma")
+        self.cmb_firma.setEditable(True)
+        layout.addWidget(self.cmb_firma,3,1)
+        self.lbl_leistung = QLabel("Leistung")
+        self.lbl_leistung.setObjectName(u"lbl_leistung")
+        layout.addWidget(self.lbl_leistung,4,0)
+        self.cmb_leistung = QComboBox(self)
+        self.cmb_leistung.setObjectName(u"cmb_leistung")
+        self.cmb_leistung.setEditable(True)
+        layout.addWidget(self.cmb_leistung,4,1)
+        self.lbl_betrag = QLabel("Betrag")
+        self.lbl_betrag.setObjectName(u"lbl_betrag")
+        layout.addWidget(self.lbl_betrag,5,0)
+        self.cmb_betrag = QComboBox(self)
+        self.cmb_betrag.setObjectName(u"cmb_betrag")
+        self.cmb_betrag.setEditable(True)
+        layout.addWidget(self.cmb_betrag,5,1)
+        self.lbl_menge = QLabel("Menge")
+        self.lbl_menge.setObjectName(u"lbl_menge")
+        layout.addWidget(self.lbl_menge,6,0)
+        self.cmb_menge = QComboBox(self)
+        self.cmb_menge.setObjectName(u"cmb_menge")
+        self.cmb_menge.setEditable(True)
+        layout.addWidget(self.cmb_menge,6,1)
+        self.lbl_einheit = QLabel("Einheit")
+        self.lbl_einheit.setObjectName(u"lbl_einheit")
+        layout.addWidget(self.lbl_einheit,7,0)
+        self.cmb_einheit = QComboBox(self)
+        self.cmb_einheit.setObjectName(u"cmb_einheit")
+        self.cmb_einheit.setEditable(False)
+        layout.addWidget(self.cmb_einheit,7,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Kostenarten')
+        for i, row in pdData.iterrows():
+            self.cmb_kostenart.addItem(str(row[1]))
+        pdData = fetch_db_pd('Einheiten')
+        for i, row in pdData.iterrows():
+            self.cmb_einheit.addItem(str(row[1]))     
+
+    def action_ok(self):
+        valid = re.match(r'^\d{2}\.\d{2}\.\d{4}$', self.cmb_datum.currentText())
+        if valid:
+            pdData = fetch_db_pd('Kosten')
+            pdData['Leistung'] = pdData['Leistung'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese kosten gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_leistung.currentText() in pdData['Leistung'].values:
+                msg_exist()
+            else:
+                kosten = (self.cmb_datum.currentText(), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
+                          self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText())
+                sql_insert('Kosten',kosten)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Das Datum muss im Format xx.xx.xxxx ("01.01.2022", "31.12.2025") sein')
+            button = dlg.exec_()
+
+class dlg_update_kosten(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Kosten bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_kosten = QLabel("Kosten bearbeiten")
+        self.lbl_edit_kosten.setObjectName(u"lbl_edit_kosten")
+        layout.addWidget(self.lbl_edit_kosten,0,0)
+        self.lbl_datum = QLabel("Datum")
+        self.lbl_datum.setObjectName(u"lbl_datum")
+        layout.addWidget(self.lbl_datum,1,0)
+        self.cmb_datum = QComboBox(self)
+        self.cmb_datum.setObjectName(u"cmb_datum")
+        self.cmb_datum.setEditable(True)
+        layout.addWidget(self.cmb_datum,1,1)
+        self.lbl_kostenart = QLabel("Kostenart")
+        self.lbl_kostenart.setObjectName(u"lbl_kostenart")
+        layout.addWidget(self.lbl_kostenart,2,0)
+        self.cmb_kostenart = QComboBox(self)
+        self.cmb_kostenart.setObjectName(u"cmb_kostenart")
+        self.cmb_kostenart.setEditable(False)
+        layout.addWidget(self.cmb_kostenart,2,1)
+        self.lbl_firma = QLabel("Firma")
+        self.lbl_firma.setObjectName(u"lbl_firma")
+        layout.addWidget(self.lbl_firma,3,0)
+        self.cmb_firma = QComboBox(self)
+        self.cmb_firma.setObjectName(u"cmb_firma")
+        self.cmb_firma.setEditable(True)
+        layout.addWidget(self.cmb_firma,3,1)
+        self.lbl_leistung = QLabel("Leistung")
+        self.lbl_leistung.setObjectName(u"lbl_leistung")
+        layout.addWidget(self.lbl_leistung,4,0)
+        self.cmb_leistung = QComboBox(self)
+        self.cmb_leistung.setObjectName(u"cmb_leistung")
+        self.cmb_leistung.setEditable(True)
+        layout.addWidget(self.cmb_leistung,4,1)
+        self.lbl_betrag = QLabel("Betrag")
+        self.lbl_betrag.setObjectName(u"lbl_betrag")
+        layout.addWidget(self.lbl_betrag,5,0)
+        self.cmb_betrag = QComboBox(self)
+        self.cmb_betrag.setObjectName(u"cmb_betrag")
+        self.cmb_betrag.setEditable(True)
+        layout.addWidget(self.cmb_leistung,5,1)
+        self.lbl_menge = QLabel("Menge")
+        self.lbl_menge.setObjectName(u"lbl_menge")
+        layout.addWidget(self.lbl_menge,6,0)
+        self.cmb_menge = QComboBox(self)
+        self.cmb_menge.setObjectName(u"cmb_menge")
+        self.cmb_menge.setEditable(True)
+        layout.addWidget(self.cmb_menge,6,1)
+        self.lbl_einheit = QLabel("Einheit")
+        self.lbl_einheit.setObjectName(u"lbl_einheit")
+        layout.addWidget(self.lbl_einheit,7,0)
+        self.cmb_einheit = QComboBox(self)
+        self.cmb_einheit.setObjectName(u"cmb_einheit")
+        self.cmb_einheit.setEditable(False)
+        layout.addWidget(self.cmb_einheit,7,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Kosten',id)
+        self.cmb_nummer.addItem(str(data[0][1]))
+        self.cmb_typ.addItem(str(data[0][2]))
+        self.cmb_gemeinschaft.addItem(str(data[0][3]))
+        self.cmb_ort.addItem(str(data[0][4]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Kosten')
+            pdData['Leistung'] = pdData['Leistung'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diesen kosten gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_nummer.currentText() in pdData['Leistung'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Kosten', x)
+                kosten = (self.cmb_datum.currentText(), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
+                          self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText(), data[0][0])
+                sql_update('Kosten',kosten)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Das Datum muss im Format xx.xx.xxxx ("01.01.2022", "31.12.2025") sein')
+            button = dlg.exec_()
+
+class dlg_add_kostenarten(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Kostenarten hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_kostenarten = QLabel("Kostenarten hinzufügen")
+        self.lbl_add_kostenarten.setObjectName(u"lbl_add_kostenarten")
+        layout.addWidget(self.lbl_add_kostenarten,0,0)
+        self.lbl_kostenart = QLabel("Kostenart")
+        self.lbl_kostenart.setObjectName(u"lbl_kostenart")
+        layout.addWidget(self.lbl_kostenart,1,0)
+        self.cmb_kostenart = QComboBox(self)
+        self.cmb_kostenart.setObjectName(u"cmb_kostenart")
+        self.cmb_kostenart.setEditable(True)
+        layout.addWidget(self.cmb_kostenart,1,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Kostenarten')
+        for i, row in pdData.iterrows():
+            self.cmb_kostenart.addItem(str(row[1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_kostenart.currentText())
+        if valid:
+            pdData = fetch_db_pd('Kostenarten')
+            pdData['Kostenart'] = pdData['Kostenart'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese Kostenart gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_kostenart.currentText() in pdData['Kostenart'].values:
+                msg_exist()
+            else:
+                kostenart = self.cmb_kostenart.currentText()
+                kostenarten =([kostenart]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+                sql_insert('Kostenarten',kostenarten)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_kostenarten(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Kostenarten bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_kostenarten = QLabel("Kostenart bearbeiten")
+        self.lbl_edit_kostenarten.setObjectName(u"lbl_edit_kostenarten")
+        layout.addWidget(self.lbl_edit_kostenarten,0,0)
+        self.lbl_kostenart = QLabel("Kostenart")
+        self.lbl_kostenart.setObjectName(u"lbl_kostenart")
+        layout.addWidget(self.lbl_kostenart,1,0)
+        self.cmb_kostenart = QComboBox(self)
+        self.cmb_kostenart.setObjectName(u"cmb_kostenart")
+        self.cmb_kostenart.setEditable(True)
+        layout.addWidget(self.cmb_kostenart,1,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Kostenarten',id)
+        self.cmb_kostenart.addItem(str(data[0][1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Kostenarten')
+            pdData['Kostenart'] = pdData['Kostenart'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese Kostenart gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_kostenart.currentText() in pdData['Kostenart'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Kostenarten', x)
+                kostenart = self.cmb_kostenart.currentText()
+                kostenarten =(kostenart)
+                kostenarten =(kostenarten, data[0][0])
+                sql_update('Kostenarten',kostenarten)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
 class dlg_add_mieter(QDialog):
     def __init__(self) -> None:
         super().__init__()
@@ -301,6 +866,244 @@ class dlg_update_mieter(QDialog):
             dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
             button = dlg.exec_()
 
+class dlg_add_stockwerke(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Stockwerke hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_stockwerke = QLabel("Stockwerke hinzufügen")
+        self.lbl_add_stockwerke.setObjectName(u"lbl_add_stockwerke")
+        layout.addWidget(self.lbl_add_stockwerke,0,0)
+        self.lbl_stockwerk = QLabel("Stockwerk")
+        self.lbl_stockwerk.setObjectName(u"lbl_stockwerk")
+        layout.addWidget(self.lbl_stockwerk,1,0)
+        self.cmb_stockwerk = QComboBox(self)
+        self.cmb_stockwerk.setObjectName(u"cmb_stockwerk")
+        self.cmb_stockwerk.setEditable(True)
+        layout.addWidget(self.cmb_stockwerk,1,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Stockwerke')
+        for i, row in pdData.iterrows():
+            self.cmb_stockwerk.addItem(str(row[1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_stockwerk.currentText())
+        if valid:
+            pdData = fetch_db_pd('Stockwerke')
+            pdData['Stockwerk'] = pdData['Stockwerk'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Dieses Stockwerk gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_stockwerk.currentText() in pdData['Stockwerk'].values:
+                msg_exist()
+            else:
+                stockwerk = self.cmb_stockwerk.currentText()
+                stockwerke =([stockwerk]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+                sql_insert('Stockwerke',stockwerke)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_stockwerke(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Stockwerke bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_stockwerke = QLabel("Stockwerk bearbeiten")
+        self.lbl_edit_stockwerke.setObjectName(u"lbl_edit_stockwerke")
+        layout.addWidget(self.lbl_edit_stockwerke,0,0)
+        self.lbl_stockwerk = QLabel("Stockwerk")
+        self.lbl_stockwerk.setObjectName(u"lbl_stockwerk")
+        layout.addWidget(self.lbl_stockwerk,1,0)
+        self.cmb_stockwerk = QComboBox(self)
+        self.cmb_stockwerk.setObjectName(u"cmb_stockwerk")
+        self.cmb_stockwerk.setEditable(True)
+        layout.addWidget(self.cmb_stockwerk,1,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Stockwerke',id)
+        self.cmb_stockwerk.addItem(str(data[0][1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Stockwerke')
+            pdData['Stockwerk'] = pdData['Stockwerk'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Dieses Stockwerk gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_stockwerk.currentText() in pdData['Stockwerk'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Stockwerke', x)
+                stockwerk = self.cmb_stockwerk.currentText()
+                stockwerke =(stockwerk)
+                stockwerke =(stockwerke, data[0][0])
+                sql_update('Stockwerke',stockwerke)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_add_umlageschluessel(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Umlageschlüssel hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_schluessel = QLabel("Schlüssel hinzufügen")
+        self.lbl_add_schluessel.setObjectName(u"lbl_add_schluessel")
+        layout.addWidget(self.lbl_add_schluessel,0,0)
+        self.lbl_schluessel = QLabel("schlüssel")
+        self.lbl_schluessel.setObjectName(u"lbl_schluessel")
+        layout.addWidget(self.lbl_schluessel,1,0)
+        self.cmb_schluessel = QComboBox(self)
+        self.cmb_schluessel.setObjectName(u"cmb_schluessel")
+        self.cmb_schluessel.setEditable(True)
+        layout.addWidget(self.cmb_schluessel,1,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Umlageschluessel')
+        for i, row in pdData.iterrows():
+            self.cmb_schluessel.addItem(str(row[1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_schluessel.currentText())
+        if valid:
+            pdData = fetch_db_pd('Umlageschluessel')
+            pdData['Schluessel'] = pdData['Schluessel'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diesen Schlüssel gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_schluessel.currentText() in pdData['Schluessel'].values:
+                msg_exist()
+            else:
+                schluessel = self.cmb_schluessel.currentText()
+                umlageschluessel =([schluessel]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+                sql_insert('Umlageschluessel',umlageschluessel)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_umlageschluessel(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Umlageschlüssel bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_schluessel = QLabel("Schlüssel bearbeiten")
+        self.lbl_edit_schluessel.setObjectName(u"lbl_edit_schluessel")
+        layout.addWidget(self.lbl_edit_schluessel,0,0)
+        self.lbl_schluessel = QLabel("Schlüssel")
+        self.lbl_schluessel.setObjectName(u"lbl_schluessel")
+        layout.addWidget(self.lbl_schluessel,1,0)
+        self.cmb_schluessel = QComboBox(self)
+        self.cmb_schluessel.setObjectName(u"cmb_schluessel")
+        self.cmb_schluessel.setEditable(True)
+        layout.addWidget(self.cmb_schluessel,1,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Umlageschluessel',id)
+        self.cmb_schluessel.addItem(str(data[0][1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Umlageschluessel')
+            pdData['Schluessel'] = pdData['Schluessel'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diesen Schluessel gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_schluessel.currentText() in pdData['Schluessel'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Umlageschluessel', x)
+                schluessel = self.cmb_schluessel.currentText()
+                umlageschluessel =(schluessel)
+                umlageschluessel =(umlageschluessel, data[0][0])
+                sql_update('Umlageschluessel',umlageschluessel)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
 class dlg_add_wohnung(QDialog):
     def __init__(self):
         super().__init__()
@@ -481,6 +1284,289 @@ class frm_neue_wohnung(QWidget):
         layout.addWidget(self.tbx_wohnungen)
         self.setLayout(layout)
 
+class dlg_add_zaehler(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("zaehler hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_zaehler = QLabel("zaehler hinzufügen")
+        self.lbl_add_zaehler.setObjectName(u"lbl_add_zaehler")
+        layout.addWidget(self.lbl_add_zaehler,0,0)
+        self.lbl_nummer = QLabel("Nummer")
+        self.lbl_nummer.setObjectName(u"lbl_nummer")
+        layout.addWidget(self.lbl_nummer,1,0)
+        self.cmb_nummer = QComboBox(self)
+        self.cmb_nummer.setObjectName(u"cmb_nummer")
+        self.cmb_nummer.setEditable(True)
+        layout.addWidget(self.cmb_nummer,1,1)
+        self.lbl_typ = QLabel("Typ")
+        self.lbl_typ.setObjectName(u"lbl_typ")
+        layout.addWidget(self.lbl_typ,2,0)
+        self.cmb_typ = QComboBox(self)
+        self.cmb_typ.setObjectName(u"cmb_typ")
+        self.cmb_typ.setEditable(True)
+        layout.addWidget(self.cmb_typ,2,1)
+        self.lbl_gemeinschaft = QLabel("Gemeinschaft J/N")
+        self.lbl_gemeinschaft.setObjectName(u"lbl_gemeinschaft")
+        layout.addWidget(self.lbl_gemeinschaft,3,0)
+        self.cmb_gemeinschaft = QComboBox(self)
+        self.cmb_gemeinschaft.setObjectName(u"cmb_gemeinschaft")
+        self.cmb_gemeinschaft.setEditable(True)
+        layout.addWidget(self.cmb_gemeinschaft,3,1)
+        self.lbl_ort = QLabel("Ort")
+        self.lbl_ort.setObjectName(u"lbl_ort")
+        layout.addWidget(self.lbl_ort,4,0)
+        self.cmb_ort = QComboBox(self)
+        self.cmb_ort.setObjectName(u"cmb_ort")
+        self.cmb_ort.setEditable(True)
+        layout.addWidget(self.cmb_ort,4,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Zaehlertypen')
+        for i, row in pdData.iterrows():
+            self.cmb_typ.addItem(str(row[1]))
+        pdData = fetch_db_pd('Wohnungen')
+        for i, row in pdData.iterrows():
+            self.cmb_ort.addItem(str(row[1]))     
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_zaehler.currentText())
+        if valid:
+            pdData = fetch_db_pd('Zaehler')
+            pdData['Nummer'] = pdData['Nummer'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese zaehler gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_nummer.currentText() in pdData['Nummer'].values:
+                msg_exist()
+            else:
+                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(), self.cmb_ort.currentText())
+                sql_insert('Zaehler',zaehler)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_zaehler(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Zähler bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_zaehler = QLabel("Zähler bearbeiten")
+        self.lbl_edit_zaehler.setObjectName(u"lbl_edit_zaehler")
+        layout.addWidget(self.lbl_edit_zaehler,0,0)
+        self.lbl_nummer = QLabel("Nummer")
+        self.lbl_nummer.setObjectName(u"lbl_nummer")
+        layout.addWidget(self.lbl_nummer,1,0)
+        self.cmb_nummer = QComboBox(self)
+        self.cmb_nummer.setObjectName(u"cmb_nummer")
+        self.cmb_nummer.setEditable(True)
+        layout.addWidget(self.cmb_nummer,1,1)
+        self.lbl_typ = QLabel("Typ")
+        self.lbl_typ.setObjectName(u"lbl_typ")
+        layout.addWidget(self.lbl_typ,2,0)
+        self.cmb_typ = QComboBox(self)
+        self.cmb_typ.setObjectName(u"cmb_typ")
+        self.cmb_typ.setEditable(True)
+        layout.addWidget(self.cmb_typ,2,1)
+        self.lbl_gemeinschaft = QLabel("Gemeinschaft J/N")
+        self.lbl_gemeinschaft.setObjectName(u"lbl_gemeinschaft")
+        layout.addWidget(self.lbl_gemeinschaft,3,0)
+        self.cmb_gemeinschaft = QComboBox(self)
+        self.cmb_gemeinschaft.setObjectName(u"cmb_gemeinschaft")
+        self.cmb_gemeinschaft.setEditable(True)
+        layout.addWidget(self.cmb_gemeinschaft,3,1)
+        self.lbl_ort = QLabel("Ort")
+        self.lbl_ort.setObjectName(u"lbl_ort")
+        layout.addWidget(self.lbl_ort,4,0)
+        self.cmb_ort = QComboBox(self)
+        self.cmb_ort.setObjectName(u"cmb_ort")
+        self.cmb_ort.setEditable(True)
+        layout.addWidget(self.cmb_ort,4,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Zaehler',id)
+        self.cmb_nummer.addItem(str(data[0][1]))
+        self.cmb_typ.addItem(str(data[0][2]))
+        self.cmb_gemeinschaft.addItem(str(data[0][3]))
+        self.cmb_ort.addItem(str(data[0][4]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Zaehler')
+            pdData['Nummer'] = pdData['Nummer'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diesen zaehler gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_nummer.currentText() in pdData['Nummer'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Zaehler', x)
+                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(), self.cmb_ort.currentText(), data[0][0])
+                sql_update('Zaehler',zaehler)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_add_zaehlertypen(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Zählertypen hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_zaehler = QLabel("Zählertyp hinzufügen")
+        self.lbl_add_zaehler.setObjectName(u"lbl_add_zaehler")
+        layout.addWidget(self.lbl_add_zaehler,0,0)
+        self.lbl_zaehler = QLabel("Typ")
+        self.lbl_zaehler.setObjectName(u"lbl_zaehler")
+        layout.addWidget(self.lbl_zaehler,1,0)
+        self.cmb_zaehler = QComboBox(self)
+        self.cmb_zaehler.setObjectName(u"cmb_zaehler")
+        self.cmb_zaehler.setEditable(True)
+        layout.addWidget(self.cmb_zaehler,1,1)
+        self.setLayout(layout)
+        
+        pdData = fetch_db_pd('Zaehlertypen')
+        for i, row in pdData.iterrows():
+            self.cmb_zaehler.addItem(str(row[1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_zaehler.currentText())
+        if valid:
+            pdData = fetch_db_pd('Zaehlertypen')
+            pdData['Typ'] = pdData['Typ'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diesen Zählertyp gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_zaehler.currentText() in pdData['Typ'].values:
+                msg_exist()
+            else:
+                zaehler = self.cmb_zaehler.currentText()
+                zaehler =([zaehler]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+                sql_insert('Zaehlertypen',zaehler)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_zaehlertypen(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Zählertypen bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_zaehler = QLabel("Bearbeiten")
+        self.lbl_edit_zaehler.setObjectName(u"lbl_edit_zaehler")
+        layout.addWidget(self.lbl_edit_zaehler,0,0)
+        self.lbl_zaehler = QLabel("Typ")
+        self.lbl_zaehler.setObjectName(u"lbl_zaehler")
+        layout.addWidget(self.lbl_zaehler,1,0)
+        self.cmb_zaehler = QComboBox(self)
+        self.cmb_zaehler.setObjectName(u"cmb_zaehler")
+        self.cmb_zaehler.setEditable(True)
+        layout.addWidget(self.cmb_zaehler,1,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Zaehlertypen',id)
+        self.cmb_zaehler.addItem(str(data[0][1]))
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Zaehlertypen')
+            pdData['Typ'] = pdData['Typ'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diesen Zählertyp gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_zaehler.currentText() in pdData['Typ'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Zaehlertypen', x)
+                zaehler = self.cmb_zaehler.currentText()
+                zaehler =(zaehler)
+                zaehler =(zaehler, data[0][0])
+                sql_update('Zaehlertypen',zaehler)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
 class Ui_frm_main(object):
     def setupUi(self, frm_main):
         if not frm_main.objectName():
@@ -558,7 +1644,13 @@ class Ui_frm_main(object):
         self.lbl_einheiten.setAlignment(Qt.AlignCenter)
         self.tbl_einheiten = QTableView(self.p_einheiten)
         self.tbl_einheiten.setObjectName(u"tbl_einheiten")
-        self.tbl_einheiten.setGeometry(QRect(10, 30, 760, 450))
+        self.tbl_einheiten.setGeometry(QRect(10, 30, 760, 350))
+        self.btn_einheiten_add = QPushButton(self.p_einheiten)
+        self.btn_einheiten_add.setObjectName(u"btn_einheiten_add")
+        self.btn_einheiten_add.setGeometry(QRect(50,450,150,25))
+        self.btn_einheiten_edit = QPushButton(self.p_einheiten)
+        self.btn_einheiten_edit.setObjectName(u"btn_einheiten_edit")
+        self.btn_einheiten_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_einheiten)
         
         self.p_gemeinschaft = QWidget()
@@ -571,7 +1663,31 @@ class Ui_frm_main(object):
         self.lbl_gemeinschaft.setGeometry(QRect(0, 0, 780, 20))
         self.lbl_gemeinschaft.setFont(font)
         self.lbl_gemeinschaft.setAlignment(Qt.AlignCenter)
+        self.btn_gemeinschaft_add = QPushButton(self.p_gemeinschaft)
+        self.btn_gemeinschaft_add.setObjectName(u"btn_gemeinschaft_add")
+        self.btn_gemeinschaft_add.setGeometry(QRect(50,450,150,25))
+        self.btn_gemeinschaft_edit = QPushButton(self.p_gemeinschaft)
+        self.btn_gemeinschaft_edit.setObjectName(u"btn_gemeinschaft_edit")
+        self.btn_gemeinschaft_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_gemeinschaft)
+
+        self.p_kosten = QWidget()
+        self.p_kosten.setObjectName(u"p_kosten")
+        self.lbl_kosten = QLabel(self.p_kosten)
+        self.lbl_kosten.setObjectName(u"lbl_kosten")
+        self.lbl_kosten.setGeometry(QRect(0, 0, 780, 20))
+        self.lbl_kosten.setFont(font)
+        self.lbl_kosten.setAlignment(Qt.AlignCenter)
+        self.tbl_kosten = QTableView(self.p_kosten)
+        self.tbl_kosten.setObjectName(u"tbl_kosten")
+        self.tbl_kosten.setGeometry(QRect(10, 30, 760, 350))
+        self.btn_kosten_add = QPushButton(self.p_kosten)
+        self.btn_kosten_add.setObjectName(u"btn_kosten_add")
+        self.btn_kosten_add.setGeometry(QRect(50,450,150,25))
+        self.btn_kosten_edit = QPushButton(self.p_kosten)
+        self.btn_kosten_edit.setObjectName(u"btn_kosten_edit")
+        self.btn_kosten_edit.setGeometry(QRect(250,450,150,25))
+        self.stackedWidget.addWidget(self.p_kosten)
 
         self.p_kostenarten = QWidget()
         self.p_kostenarten.setObjectName(u"p_kostenarten")
@@ -583,6 +1699,12 @@ class Ui_frm_main(object):
         self.tbl_kostenarten = QTableView(self.p_kostenarten)
         self.tbl_kostenarten.setObjectName(u"tbl_kostenarten")
         self.tbl_kostenarten.setGeometry(QRect(10, 30, 760, 350))
+        self.btn_kostenarten_add = QPushButton(self.p_kostenarten)
+        self.btn_kostenarten_add.setObjectName(u"btn_kostenarten_add")
+        self.btn_kostenarten_add.setGeometry(QRect(50,450,150,25))
+        self.btn_kostenarten_edit = QPushButton(self.p_kostenarten)
+        self.btn_kostenarten_edit.setObjectName(u"btn_kostenarten_edit")
+        self.btn_kostenarten_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_kostenarten)
 
         self.p_umlageschluessel = QWidget()
@@ -595,6 +1717,12 @@ class Ui_frm_main(object):
         self.lbl_umlageschluessel.setGeometry(QRect(0, 0, 780, 20))
         self.lbl_umlageschluessel.setFont(font)
         self.lbl_umlageschluessel.setAlignment(Qt.AlignCenter)
+        self.btn_umlageschluessel_add = QPushButton(self.p_umlageschluessel)
+        self.btn_umlageschluessel_add.setObjectName(u"btn_umlageschluessel_add")
+        self.btn_umlageschluessel_add.setGeometry(QRect(50,450,150,25))
+        self.btn_umlageschluessel_edit = QPushButton(self.p_umlageschluessel)
+        self.btn_umlageschluessel_edit.setObjectName(u"btn_umlageschluessel_edit")
+        self.btn_umlageschluessel_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_umlageschluessel)
         
         self.p_stockwerke = QWidget()
@@ -607,6 +1735,12 @@ class Ui_frm_main(object):
         self.lbl_stockwerke.setGeometry(QRect(0, 0, 780, 20))
         self.lbl_stockwerke.setFont(font)
         self.lbl_stockwerke.setAlignment(Qt.AlignCenter)
+        self.btn_stockwerke_add = QPushButton(self.p_stockwerke)
+        self.btn_stockwerke_add.setObjectName(u"btn_stockwerke_add")
+        self.btn_stockwerke_add.setGeometry(QRect(50,450,150,25))
+        self.btn_stockwerke_edit = QPushButton(self.p_stockwerke)
+        self.btn_stockwerke_edit.setObjectName(u"btn_stockwerke_edit")
+        self.btn_stockwerke_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_stockwerke)
         
         self.p_vermietung = QWidget()
@@ -655,6 +1789,12 @@ class Ui_frm_main(object):
         self.lbl_zaehler.setGeometry(QRect(0, 0, 780, 20))
         self.lbl_zaehler.setFont(font)
         self.lbl_zaehler.setAlignment(Qt.AlignCenter)
+        self.btn_zaehler_add = QPushButton(self.p_zaehler)
+        self.btn_zaehler_add.setObjectName(u"btn_zaehler_add")
+        self.btn_zaehler_add.setGeometry(QRect(50,450,150,25))
+        self.btn_zaehler_edit = QPushButton(self.p_zaehler)
+        self.btn_zaehler_edit.setObjectName(u"btn_zaehler_edit")
+        self.btn_zaehler_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_zaehler)
 
         self.p_zaehlertypen = QWidget()
@@ -667,6 +1807,12 @@ class Ui_frm_main(object):
         self.lbl_zaehlertypen.setGeometry(QRect(0, 0, 780, 20))
         self.lbl_zaehlertypen.setFont(font)
         self.lbl_zaehlertypen.setAlignment(Qt.AlignCenter)
+        self.btn_zaehlertypen_add = QPushButton(self.p_zaehlertypen)
+        self.btn_zaehlertypen_add.setObjectName(u"btn_zaehlertypen_add")
+        self.btn_zaehlertypen_add.setGeometry(QRect(50,450,150,25))
+        self.btn_zaehlertypen_edit = QPushButton(self.p_zaehlertypen)
+        self.btn_zaehlertypen_edit.setObjectName(u"btn_zaehlertypen_edit")
+        self.btn_zaehlertypen_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_zaehlertypen)
         
         self.gridLayout.addWidget(self.stackedWidget, 0, 0, 1, 1)
@@ -707,6 +1853,7 @@ class Ui_frm_main(object):
         self.menuExtras.addAction(self.actionVorlagen_erstellen)
         self.menuExtras.addAction(self.actionImport)
         self.menuVerwaltung.addAction(self.actionAblesung)
+        self.menuVerwaltung.addAction(self.actionKosten)
         self.menuVerwaltung.addAction(self.actionVermietung)
         self.menuAuskunft.addAction(self.actionVerbrauch)
 
@@ -736,13 +1883,26 @@ class Ui_frm_main(object):
         self.actionAblesung.setText(QCoreApplication.translate("frm_main", u"Ablesung", None))
         self.actionVermietung.setText(QCoreApplication.translate("frm_main", u"Vermietung", None))
         self.actionVerbrauch.setText(QCoreApplication.translate("frm_main", u"Verbrauch", None))
-        self.lbl_main.setText(QCoreApplication.translate("frm_main", u"Moin", None))
+        self.lbl_main.setText(QCoreApplication.translate("frm_main", u" ", None))
         self.lbl_ablesung.setText(QCoreApplication.translate("frm_main", u"Ablesung", None))
         self.lbl_einheiten.setText(QCoreApplication.translate("frm_main", u"Einheiten", None))
+        self.btn_einheiten_add.setText(QCoreApplication.translate("frm_main",u"Neue Einheit", None))
+        self.btn_einheiten_edit.setText(QCoreApplication.translate("frm_main",u"Einheit bearbeiten", None))
         self.lbl_gemeinschaft.setText(QCoreApplication.translate("frm_main", u"Gemeinschaftsfl\u00e4chen", None))
+        self.btn_gemeinschaft_add.setText(QCoreApplication.translate("frm_main",u"Neu", None))
+        self.btn_gemeinschaft_edit.setText(QCoreApplication.translate("frm_main",u"Bearbeiten", None))
+        self.lbl_kosten.setText(QCoreApplication.translate("frm_main", u"Kosten", None))
+        self.btn_kosten_add.setText(QCoreApplication.translate("frm_main",u"Kosten erfassen", None))
+        self.btn_kosten_edit.setText(QCoreApplication.translate("frm_main",u"Kosten bearbeiten", None))
         self.lbl_kostenarten.setText(QCoreApplication.translate("frm_main", u"Kostenarten", None))
+        self.btn_kostenarten_add.setText(QCoreApplication.translate("frm_main",u"Neue Kostenart", None))
+        self.btn_kostenarten_edit.setText(QCoreApplication.translate("frm_main",u"Kostenart bearbeiten", None))
         self.lbl_umlageschluessel.setText(QCoreApplication.translate("frm_main", u"Umlageschl\u00fcssel", None))
+        self.btn_umlageschluessel_add.setText(QCoreApplication.translate("frm_main",u"Neuer Schl\u00fcssel", None))
+        self.btn_umlageschluessel_edit.setText(QCoreApplication.translate("frm_main",u"Schl\u00fcssel bearbeiten", None))
         self.lbl_stockwerke.setText(QCoreApplication.translate("frm_main", u"Stockwerke", None))
+        self.btn_stockwerke_add.setText(QCoreApplication.translate("frm_main",u"Neues Stockwerk", None))
+        self.btn_stockwerke_edit.setText(QCoreApplication.translate("frm_main",u"Stockwerk bearbeiten", None))
         self.lbl_vermietung.setText(QCoreApplication.translate("frm_main", u"Vermietung", None))
         self.btn_vermietung_add.setText(QCoreApplication.translate("frm_main",u"Neue*r Mieter*in", None))
         self.btn_vermietung_edit.setText(QCoreApplication.translate("frm_main", u"Mieter*in bearbeiten",None))
@@ -750,7 +1910,11 @@ class Ui_frm_main(object):
         self.btn_wohnungen_add.setText(QCoreApplication.translate("frm_main",u"Neue Wohnung", None))
         self.btn_wohnungen_edit.setText(QCoreApplication.translate("frm_main",u"Wohnung bearbeiten", None))
         self.lbl_zaehler.setText(QCoreApplication.translate("frm_main", u"Z\u00e4hler", None))
+        self.btn_zaehler_add.setText(QCoreApplication.translate("frm_main",u"Neuer Z\u00e4hler", None))
+        self.btn_zaehler_edit.setText(QCoreApplication.translate("frm_main",u"Z\u00e4hler bearbeiten", None))
         self.lbl_zaehlertypen.setText(QCoreApplication.translate("frm_main", u"Z\u00e4hlertypen", None))
+        self.btn_zaehlertypen_add.setText(QCoreApplication.translate("frm_main",u"Neu", None))
+        self.btn_zaehlertypen_edit.setText(QCoreApplication.translate("frm_main",u"Bearbeiten", None))
         self.menuDatei.setTitle(QCoreApplication.translate("frm_main", u"Datei", None))
         self.menuStammdaten.setTitle(QCoreApplication.translate("frm_main", u"Stammdaten", None))
         self.menuExtras.setTitle(QCoreApplication.translate("frm_main", u"Extras", None))

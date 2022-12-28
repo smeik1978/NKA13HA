@@ -25,20 +25,203 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
         self.stackedWidget.setCurrentWidget(self.p_main)
         self.actionAblesung.triggered.connect(self.show_ablesung)
         self.actionEinheiten.triggered.connect(self.show_einheiten)
+        self.btn_einheiten_add.clicked.connect(self.btn_einheiten_add_clicked)
+        self.btn_einheiten_edit.clicked.connect(self.btn_einheiten_edit_clicked)
         self.actionGemeinschaftsflaechen.triggered.connect(self.show_gemeinschaftsflaechen)
+        self.btn_gemeinschaft_add.clicked.connect(self.btn_gemeinschaft_add_clicked)
+        self.btn_gemeinschaft_edit.clicked.connect(self.btn_gemeinschaft_edit_clicked)
+        self.actionKosten.triggered.connect(self.show_kosten)
+        self.btn_kosten_add.clicked.connect(self.btn_kosten_add_clicked)
+        self.btn_kosten_edit.clicked.connect(self.btn_kosten_edit_clicked)
         self.actionKostenarten.triggered.connect(self.show_kostenarten)
+        self.btn_kostenarten_add.clicked.connect(self.btn_kostenarten_add_clicked)
+        self.btn_kostenarten_edit.clicked.connect(self.btn_kostenarten_edit_clicked)
         self.actionStockwerke.triggered.connect(self.show_stockwerke)
+        self.btn_stockwerke_add.clicked.connect(self.btn_stockwerke_add_clicked)
+        self.btn_stockwerke_edit.clicked.connect(self.btn_stockwerke_edit_clicked)
         self.actionUmlageschluessel.triggered.connect(self.show_umlageschluessel)
-        self.actionWohnungen.triggered.connect(self.show_wohnung)
-        self.btn_wohnungen_add.clicked.connect(self.btn_wohnungen_add_clicked)
-        self.btn_wohnungen_edit.clicked.connect(self.btn_wohnungen_edit_clicked)
+        self.btn_umlageschluessel_add.clicked.connect(self.btn_schluessel_add_clicked)
+        self.btn_umlageschluessel_edit.clicked.connect(self.btn_schluessel_edit_clicked)
         self.actionVermietung.triggered.connect(self.show_vermietung)
         self.btn_vermietung_add.clicked.connect(self.btn_vermietung_add_clicked)
         self.btn_vermietung_edit.clicked.connect(self.btn_vermietung_edit_clicked)
+        self.actionWohnungen.triggered.connect(self.show_wohnung)
+        self.btn_wohnungen_add.clicked.connect(self.btn_wohnungen_add_clicked)
+        self.btn_wohnungen_edit.clicked.connect(self.btn_wohnungen_edit_clicked)
         self.actionZaehler.triggered.connect(self.show_zaehler)
+        self.btn_zaehler_add.clicked.connect(self.btn_zaehler_add_clicked)
+        self.btn_zaehler_edit.clicked.connect(self.btn_zaehler_edit_clicked)
         self.actionZaehlertypen.triggered.connect(self.show_zaehlertypen)
+        self.btn_zaehlertypen_add.clicked.connect(self.btn_zaehlertypen_add_clicked)
+        self.btn_zaehlertypen_edit.clicked.connect(self.btn_zaehlertypen_edit_clicked)
         self.actionBeenden.triggered.connect(self.close)
         
+    def btn_einheiten_add_clicked(self, s):
+        dlg = res.dlg_add_einheiten()
+        if dlg.exec():
+            self.show_einheiten()
+        else:
+            pass
+    
+    def btn_gemeinschaft_add_clicked(self, s):
+        dlg = res.dlg_add_gemeinschaft()
+        if dlg.exec():
+            self.show_gemeinschaftsflaechen()
+        else:
+            pass
+
+    def btn_kosten_add_clicked(self, s):
+        dlg = res.dlg_add_kosten()
+        if dlg.exec():
+            self.show_kosten()
+        else:
+            pass
+
+    def btn_kostenarten_add_clicked(self, s):
+        dlg = res.dlg_add_kostenarten()
+        if dlg.exec():
+            self.show_kostenarten()
+        else:
+            pass
+
+    def btn_schluessel_add_clicked(self, s):
+        dlg = res.dlg_add_umlageschluessel()
+        if dlg.exec():
+            self.show_umlageschluessel()
+        else:
+            pass
+
+    def btn_stockwerke_add_clicked(self, s):
+        dlg = res.dlg_add_stockwerke()
+        if dlg.exec():
+            self.show_stockwerke()
+        else:
+            pass
+
+    def btn_vermietung_add_clicked(self, s):
+        dlg = res.dlg_add_mieter()
+        if dlg.exec():
+            self.show_vermietung()
+        else:
+            pass
+        
+    def btn_wohnungen_add_clicked(self, s):
+        dlg = res.dlg_add_wohnung()
+        if dlg.exec():
+            self.show_wohnung()
+        else:
+            pass
+    
+    def btn_zaehler_add_clicked(self, s):
+        dlg = res.dlg_add_zaehler()
+        if dlg.exec():
+            self.show_zaehler()
+        else:
+            pass
+    
+    def btn_zaehlertypen_add_clicked(self, s):
+        dlg = res.dlg_add_zaehlertypen()
+        if dlg.exec():
+            self.show_zaehlertypen()
+        else:
+            pass
+    
+    def btn_einheiten_edit_clicked(self):
+            self.stackedWidget.setCurrentWidget(self.p_einheiten)
+            model = self.tbl_einheiten.model()
+            rows = sorted(set(index.row() for index in
+                        self.tbl_einheiten.selectedIndexes()))
+            if rows:
+                for row in rows:
+                    #print('Row %d is selected' % row)
+                    id = model.data(model.index(row,0))
+                #print(id)
+                dlg = res.dlg_update_einheiten(id)
+                if dlg.exec():
+                    self.show_einheiten()
+                else:
+                    pass
+    
+    def btn_gemeinschaft_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_gemeinschaft)
+        model = self.tbl_gemeinschaft.model()
+        rows = sorted(set(index.row() for index in
+                    self.tbl_gemeinschaft.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_gemeinschaft(id)
+            if dlg.exec():
+                self.show_gemeinschaftsflaechen()
+            else:
+                pass
+    
+    def btn_kostenarten_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_kostenarten)
+        model = self.tbl_kostenarten.model()
+        rows = sorted(set(index.row() for index in
+                    self.tbl_kostenarten.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_kostenarten(id)
+            if dlg.exec():
+                self.show_kostenarten()
+            else:
+                pass
+    
+    def btn_kosten_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_kosten)
+        model = self.tbl_kosten.model()
+        rows = sorted(set(index.row() for index in
+                    self.tbl_kosten.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_kosten(id)
+            if dlg.exec():
+                self.show_kosten()
+            else:
+                pass
+    
+    def btn_schluessel_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_umlageschluessel)
+        model = self.tbl_umlageschluessel.model()
+        rows = sorted(set(index.row() for index in
+                    self.tbl_umlageschluessel.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_umlageschluessel(id)
+            if dlg.exec():
+                self.show_umlageschluessel()
+            else:
+                pass
+    
+    def btn_stockwerke_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_stockwerke)
+        model = self.tbl_stockwerke.model()
+        rows = sorted(set(index.row() for index in
+                    self.tbl_stockwerke.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_stockwerke(id)
+            if dlg.exec():
+                self.show_stockwerke()
+            else:
+                pass
+    
     def btn_vermietung_edit_clicked(self):
             self.stackedWidget.setCurrentWidget(self.p_vermietung)
             model = self.tbl_vermietung.model()
@@ -70,20 +253,38 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
                 self.show_wohnung()
             else:
                 pass
-        
-    def btn_wohnungen_add_clicked(self, s):
-        dlg = res.dlg_add_wohnung()
-        if dlg.exec():
-            self.show_wohnung()
-        else:
-            pass
     
-    def btn_vermietung_add_clicked(self, s):
-        dlg = res.dlg_add_mieter()
-        if dlg.exec():
-            self.show_vermietung()
-        else:
-            pass
+    def btn_zaehler_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_zaehler)
+        model = self.tbl_zaehler.model()
+        rows = sorted(set(index.row() for index in
+                      self.tbl_zaehler.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_zaehler(id)
+            if dlg.exec():
+                self.show_zaehler()
+            else:
+                pass
+    
+    def btn_zaehlertypen_edit_clicked(self):
+        self.stackedWidget.setCurrentWidget(self.p_zaehlertypen)
+        model = self.tbl_zaehlertypen.model()
+        rows = sorted(set(index.row() for index in
+                      self.tbl_zaehlertypen.selectedIndexes()))
+        if rows:
+            for row in rows:
+                #print('Row %d is selected' % row)
+                id = model.data(model.index(row,0))
+            #print(id)
+            dlg = res.dlg_update_zaehlertypen(id)
+            if dlg.exec():
+                self.show_zaehlertypen()
+            else:
+                pass
     
     def show_new_window(self, checked):
         self._new_Window = res.frm_edit_wohnung()
@@ -104,6 +305,11 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
         model = res.PandasModel(res.fetch_db_pd('Gemeinschaftsflaechen'))
         self.tbl_gemeinschaft.setModel(model)
 
+    def show_kosten(self):
+        self.stackedWidget.setCurrentWidget(self.p_kosten)
+        model = res.PandasModel(res.fetch_db_pd('Kosten'))
+        self.tbl_kosten.setModel(model)
+        
     def show_kostenarten(self):
         self.stackedWidget.setCurrentWidget(self.p_kostenarten)
         model = res.PandasModel(res.fetch_db_pd('Kostenarten'))
