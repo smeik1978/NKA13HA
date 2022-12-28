@@ -85,19 +85,30 @@ def query_structure(t):
     schema = create_sql_schema()
     table = schema[t]
     keys = list(table)
+    print(keys)
     keys.remove('id')
-    insert = ' '.join(keys)
-    update = ' '.join(keys)
-    insert = insert.replace(" ",", ")
-    update = update.replace(" "," = ?, ")
-    update += " = ?"
-    qmrks = ""
-    for i in range(len(keys)):
-        qmrks += "?,"
-    qmrks = qmrks[0:-1]
-    query = {}
-    query['insert'] = "INSERT INTO "+t+"("+insert+") VALUES("+qmrks+")"
-    query['update'] = "UPDATE "+t+" SET "+update+" WHERE id = ?"
+    print(len(keys))
+    if len(keys)>1:
+        insert = ' '.join(keys)
+        update = ' '.join(keys)
+        insert = insert.replace(" ",", ")
+        update = update.replace(" "," = ?, ")
+        update += " = ?"
+        qmrks = ""        
+        for i in range(len(keys)):
+            qmrks += "?,"
+        qmrks = qmrks[0:-1]
+        query = {}
+        query['insert'] = "INSERT INTO "+t+"("+insert+") VALUES("+qmrks+")"
+        query['update'] = "UPDATE "+t+" SET "+update+" WHERE id = ?"
+    else:
+        insert = keys[0]
+        update = keys[0]
+        update += " = ?"
+        query = {}
+        query['insert'] = "INSERT INTO "+t+"("+insert+") VALUES(?)"
+        query['update'] = "UPDATE "+t+" SET "+update+" WHERE id = ?"
+    print(query)
     return query
   
 def sql_insert(table_name, data):
@@ -112,6 +123,7 @@ def sql_insert(table_name, data):
         query = query_structure(table_name)
         sql = query['insert']
         cur = conn.cursor()
+        print(data)
         cur.execute(sql, data)
         conn.commit()
         print("SQLite INSERT erfolgreich")
