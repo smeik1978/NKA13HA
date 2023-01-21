@@ -1,25 +1,271 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'frm_main.ui'
+## User-Interface
 ##
-## Created by: Qt User Interface Compiler version 6.4.0
+## Created by: Matthias Müller
 ##
-## WARNING! All changes made in this file will be lost when recompiling UI file!
+## 
 ################################################################################
 
-import re
+import re, datetime
 
-from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, Qt)
+from PySide6.QtCore import (QCoreApplication, QMetaObject, QRect, QSize, QDate, Qt)
 from PySide6.QtGui import (QAction, QFont)
-from PySide6.QtWidgets import (QComboBox, QDialog,
+from PySide6.QtWidgets import (QComboBox, QDialog, QDateEdit,
                                QDialogButtonBox, QGridLayout,
                                QLabel, QLineEdit, QMenu, QMenuBar,
                                QMessageBox, QPushButton, 
                                QStackedWidget, QStatusBar, QTableView,
                                QVBoxLayout, QWidget)
 
-from .modules import PandasModel, sql_insert, sql_update, fetch_db_pd, fetch_data
+from .modules import PandasModel, sql_insert, sql_update, fetch_db_pd, fetch_data, fetch_data2
+
+class dlg_add_ablesung(QDialog):
+    def __init__(self) -> None:
+        super().__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Ablesung hinzufügen")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_add_ablesung = QLabel("Hinzufügen")
+        self.lbl_add_ablesung.setObjectName(u"lbl_add_ablesung")
+        layout.addWidget(self.lbl_add_ablesung,0,0)
+        self.lbl_datum = QLabel("Datum")
+        self.lbl_datum.setObjectName(u"lbl_datum")
+        layout.addWidget(self.lbl_datum,1,0)
+        self.dt_datum = QDateEdit(self)
+        self.dt_datum.setObjectName(u"dt_datum")
+        self.dt_datum.setDisplayFormat("dd.MM.yyyy")
+        self.dt_datum.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_datum,1,1)
+        self.lbl_weid = QLabel("WE-ID")
+        self.lbl_weid.setObjectName(u"lbl_weid")
+        layout.addWidget(self.lbl_weid,2,0)
+        self.cmb_weid = QComboBox(self)
+        self.cmb_weid.setObjectName(u"cmb_weid")
+        self.cmb_weid.setEditable(False)
+        self.cmb_weid.currentIndexChanged.connect(self.updateComboWEID)
+        layout.addWidget(self.cmb_weid,2,1)
+        self.lbl_wohnung = QLabel("Wohnung")
+        self.lbl_wohnung.setObjectName(u"lbl_wohnung")
+        layout.addWidget(self.lbl_wohnung,3,0)
+        self.cmb_wohnung = QComboBox(self)
+        self.cmb_wohnung.setObjectName(u"cmb_wohnung")
+        self.cmb_wohnung.setEditable(False)
+        layout.addWidget(self.cmb_wohnung,3,1)
+        self.lbl_ort = QLabel("Ort")
+        self.lbl_ort.setObjectName(u"lbl_ort")
+        layout.addWidget(self.lbl_ort,4,0)
+        self.cmb_ort = QComboBox(self)
+        self.cmb_ort.setObjectName(u"cmb_ort")
+        self.cmb_ort.setEditable(False)
+        layout.addWidget(self.cmb_ort,4,1)        
+        self.lbl_typ = QLabel("Typ")
+        self.lbl_typ.setObjectName(u"lbl_typ")
+        layout.addWidget(self.lbl_typ,5,0)
+        self.cmb_typ = QComboBox(self)
+        self.cmb_typ.setObjectName(u"cmb_typ")
+        self.cmb_typ.setEditable(False)
+        layout.addWidget(self.cmb_typ,5,1)
+        self.lbl_nummer = QLabel("Nummer")
+        self.lbl_nummer.setObjectName(u"lbl_nummer")
+        layout.addWidget(self.lbl_nummer,6,0)
+        self.cmb_nummer = QComboBox(self)
+        self.cmb_nummer.setObjectName(u"cmb_nummer")
+        self.cmb_nummer.setEditable(False)
+        layout.addWidget(self.cmb_nummer,6,1)
+        self.lbl_anfang = QLabel("Anfangsstand")
+        self.lbl_anfang.setObjectName(u"lbl_anfang")
+        layout.addWidget(self.lbl_anfang,7,0)
+        self.cmb_anfang = QComboBox(self)
+        self.cmb_anfang.setObjectName(u"cmb_anfang")
+        self.cmb_anfang.setEditable(True)
+        layout.addWidget(self.cmb_anfang,7,1)
+        self.lbl_ende = QLabel("Endstand")
+        self.lbl_ende.setObjectName(u"lbl_ende")
+        layout.addWidget(self.lbl_ende,8,0)
+        self.cmb_ende = QComboBox(self)
+        self.cmb_ende.setObjectName(u"cmb_ende")
+        self.cmb_ende.setEditable(True)
+        layout.addWidget(self.cmb_ende,8,1)
+        self.setLayout(layout)
+        
+        #pdData = fetch_db_pd('Zaehler')
+        #for i, row in pdData.iterrows():
+        #    self.cmb_nummer.addItem(str(row[1]))
+        #    self.cmb_typ.addItem(str(row[2]))
+        #    self.cmb_ort.addItem(str(row[4]))
+        pdData = fetch_db_pd('Vermietung')
+        pdData = pdData.sort_values('WEID')
+        for i, row in pdData.iterrows():
+            self.cmb_weid.addItem(str(row[1]))     
+           
+    # Combo füllen
+    def updateComboWEID(self):
+        self.cmb_wohnung.clear()
+        self.cmb_nummer.clear()
+        self.cmb_typ.clear()
+        weid = str(self.cmb_weid.currentText())
+        wohnung = fetch_data2('Vermietung', 'WEID', weid)
+        #print(value)
+        self.cmb_wohnung.addItem(str(wohnung[0][2]))
+        zaehler = fetch_db_pd('Zaehler')
+        grouped = zaehler.groupby(by=['Wohnung', 'Typ']).max()
+        for name, group in grouped.iterrows():
+            if name[0] == str(wohnung[0][2]):
+                self.cmb_typ.addItem(name[1])
+        grouped = zaehler.groupby(by=['Typ', 'Nummer']).max()
+        for name, group in grouped.iterrows():
+            if name[0] == 'Heizung':
+                if group[2] == str(wohnung[0][2]):
+                    self.cmb_nummer.addItem(name[1])
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_zaehler.currentText())
+        if valid:
+            pdData = fetch_db_pd('Ablesung')
+            pdData['Zaehlernummer'] = pdData['Zaehlernummer'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Dieser Zähler wurde schon erfasst.")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_nummer.currentText() in pdData['Zaehlernummer'].values:
+                msg_exist()
+            else:
+                ablesung = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_weid.currentText(), self.cmb_wohnung.currentText(), self.cmb_typ.currentText(),
+                            self.cmb_nummer.currentText(), self.cmb_anfang.currentText(), self.cmb_ende.currentText())
+                sql_insert('Ablesung',ablesung)
+                msg_ok()
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
+
+class dlg_update_ablesung(QDialog):
+    def __init__(self, id, parent=None):
+        super().__init__(parent)
+        layout = QGridLayout()
+        self.setWindowTitle("Ablesung bearbeiten")
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.action_ok)
+        self.buttonBox.rejected.connect(self.reject)
+        layout.addWidget(self.buttonBox,12,1)
+        self.lbl_edit_ablesung = QLabel("Bearbeiten")
+        self.lbl_edit_ablesung.setObjectName(u"lbl_edit_ablesung")
+        layout.addWidget(self.lbl_edit_ablesung,0,0)
+        self.lbl_datum = QLabel("Datum")
+        self.lbl_datum.setObjectName(u"lbl_datum")
+        layout.addWidget(self.lbl_datum,1,0)
+        self.dt_datum = QDateEdit(self)
+        self.dt_datum.setObjectName(u"dt_datum")
+        self.dt_datum.setDisplayFormat("dd.MM.yyyy")
+        self.dt_datum.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_datum,1,1)
+        self.lbl_weid = QLabel("WE-ID")
+        self.lbl_weid.setObjectName(u"lbl_weid")
+        layout.addWidget(self.lbl_weid,2,0)
+        self.cmb_weid = QComboBox(self)
+        self.cmb_weid.setObjectName(u"cmb_weid")
+        self.cmb_weid.setEditable(False)
+        layout.addWidget(self.cmb_weid,2,1)
+        self.lbl_ort = QLabel("Ort")
+        self.lbl_ort.setObjectName(u"lbl_ort")
+        layout.addWidget(self.lbl_ort,3,0)
+        self.cmb_ort = QComboBox(self)
+        self.cmb_ort.setObjectName(u"cmb_ort")
+        self.cmb_ort.setEditable(False)
+        layout.addWidget(self.cmb_ort,3,1)
+        self.lbl_typ = QLabel("Typ")
+        self.lbl_typ.setObjectName(u"lbl_typ")
+        layout.addWidget(self.lbl_typ,4,0)
+        self.cmb_typ = QComboBox(self)
+        self.cmb_typ.setObjectName(u"cmb_typ")
+        self.cmb_typ.setEditable(False)
+        layout.addWidget(self.cmb_typ,4,1)
+        self.lbl_nummer = QLabel("Nummer")
+        self.lbl_nummer.setObjectName(u"lbl_nummer")
+        layout.addWidget(self.lbl_nummer,5,0)
+        self.cmb_nummer = QComboBox(self)
+        self.cmb_nummer.setObjectName(u"cmb_nummer")
+        self.cmb_nummer.setEditable(False)
+        layout.addWidget(self.cmb_nummer,5,1)
+        self.lbl_anfang = QLabel("Anfangsstand")
+        self.lbl_anfang.setObjectName(u"lbl_anfang")
+        layout.addWidget(self.lbl_anfang,6,0)
+        self.cmb_anfang = QComboBox(self)
+        self.cmb_anfang.setObjectName(u"cmb_anfang")
+        self.cmb_anfang.setEditable(True)
+        layout.addWidget(self.cmb_anfang,6,1)
+        self.lbl_ende = QLabel("Endstand")
+        self.lbl_ende.setObjectName(u"lbl_ende")
+        layout.addWidget(self.lbl_ende,7,0)
+        self.cmb_ende = QComboBox(self)
+        self.cmb_ende.setObjectName(u"cmb_ende")
+        self.cmb_ende.setEditable(True)
+        layout.addWidget(self.cmb_ende,7,1)
+        self.setLayout(layout)
+        
+        global x
+        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+        data = fetch_data('Ablesung',id)
+        #self.cmb_datum.addItem(str(data[0][1]))
+        self.dt_datum.setDate(QDate.fromString(str(data[0][1]),"dd.MM.yyyy"))
+        self.cmb_weid.addItem(str(data[0][2]))
+        self.cmb_ort.addItem(str(data[0][3]))
+        self.cmb_typ.addItem(str(data[0][4]))
+        self.cmb_nummer.addItem(str(data[0][5]))
+        self.cmb_anfang.addItem(str(data[0][6]))
+        self.cmb_ende.addItem(str(data[0][7]))
+        
+
+    def action_ok(self):
+        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
+        if valid:
+            pdData = fetch_db_pd('Ablesung')
+            pdData['Zaehlernummer'] = pdData['Zaehlernummer'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Diese Nummer gibt es schon")
+                button = dlg.exec_()
+                
+            def msg_ok():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Erfolgreich!")
+                dlg.setText("Der Datensatz wurde angelegt")
+                button = dlg.exec_()
+            
+            if self.cmb_nummer.currentText() in pdData['Zaehlernummer'].values:
+                msg_exist()
+            else:
+                data = fetch_data('Ablesung', x)
+                ablesung = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_weid.currentText(), self.cmb_ort.currentText(), self.cmb_typ.currentText(),
+                            self.cmb_nummer.currentText(), self.cmb_anfang.currentText(), self.cmb_ende.currentText(), data[0][0])
+                sql_update('Ablesung',ablesung)
+                msg_ok()    
+                self.accept()
+        else:
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Achtung!")
+            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            button = dlg.exec_()
 
 class dlg_add_einheiten(QDialog):
     def __init__(self) -> None:
@@ -275,10 +521,11 @@ class dlg_add_kosten(QDialog):
         self.lbl_datum = QLabel("Datum")
         self.lbl_datum.setObjectName(u"lbl_datum")
         layout.addWidget(self.lbl_datum,1,0)
-        self.cmb_datum = QComboBox(self)
-        self.cmb_datum.setObjectName(u"cmb_datum")
-        self.cmb_datum.setEditable(True)
-        layout.addWidget(self.cmb_datum,1,1)
+        self.dt_datum = QDateEdit(self)
+        self.dt_datum.setObjectName(u"dt_datum")
+        self.dt_datum.setDisplayFormat("dd.MM.yyyy")
+        self.dt_datum.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_datum,1,1)
         self.lbl_kostenart = QLabel("Kostenart")
         self.lbl_kostenart.setObjectName(u"lbl_kostenart")
         layout.addWidget(self.lbl_kostenart,2,0)
@@ -331,7 +578,7 @@ class dlg_add_kosten(QDialog):
             self.cmb_einheit.addItem(str(row[1]))     
 
     def action_ok(self):
-        valid = re.match(r'^\d{2}\.\d{2}\.\d{4}$', self.cmb_datum.currentText())
+        valid = True #re.match(r'^\d{2}\.\d{2}\.\d{4}$', self.cmb_datum.currentText())
         if valid:
             pdData = fetch_db_pd('Kosten')
             pdData['Leistung'] = pdData['Leistung'].astype(str)
@@ -351,7 +598,7 @@ class dlg_add_kosten(QDialog):
             if self.cmb_leistung.currentText() in pdData['Leistung'].values:
                 msg_exist()
             else:
-                kosten = (self.cmb_datum.currentText(), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
+                kosten = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
                           self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText())
                 sql_insert('Kosten',kosten)
                 msg_ok()    
@@ -378,10 +625,11 @@ class dlg_update_kosten(QDialog):
         self.lbl_datum = QLabel("Datum")
         self.lbl_datum.setObjectName(u"lbl_datum")
         layout.addWidget(self.lbl_datum,1,0)
-        self.cmb_datum = QComboBox(self)
-        self.cmb_datum.setObjectName(u"cmb_datum")
-        self.cmb_datum.setEditable(True)
-        layout.addWidget(self.cmb_datum,1,1)
+        self.dt_datum = QDateEdit(self)
+        self.dt_datum.setObjectName(u"dt_datum")
+        self.dt_datum.setDisplayFormat("dd.MM.yyyy")
+        self.dt_datum.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_datum,1,1)
         self.lbl_kostenart = QLabel("Kostenart")
         self.lbl_kostenart.setObjectName(u"lbl_kostenart")
         layout.addWidget(self.lbl_kostenart,2,0)
@@ -456,7 +704,7 @@ class dlg_update_kosten(QDialog):
                 msg_exist()
             else:
                 data = fetch_data('Kosten', x)
-                kosten = (self.cmb_datum.currentText(), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
+                kosten = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
                           self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText(), data[0][0])
                 sql_update('Kosten',kosten)
                 msg_ok()    
@@ -658,17 +906,19 @@ class dlg_add_mieter(QDialog):
         self.lbl_mietbeginn = QLabel("Mietbeginn")
         self.lbl_mietbeginn.setObjectName(u"lbl_mietbeginn")
         layout.addWidget(self.lbl_mietbeginn,9,0)
-        self.cmb_mietbeginn = QComboBox(self)
-        self.cmb_mietbeginn.setObjectName(u"cmb_mietbeginn")
-        self.cmb_mietbeginn.setEditable(True)
-        layout.addWidget(self.cmb_mietbeginn,9,1)
+        self.dt_mietbeginn = QDateEdit(self)
+        self.dt_mietbeginn.setObjectName(u"dt_mietbeginn")
+        self.dt_mietbeginn.setDisplayFormat("dd.MM.yyyy")
+        self.dt_mietbeginn.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_mietbeginn,9,1)
         self.lbl_mietende = QLabel("Mietende")
         self.lbl_mietende.setObjectName(u"lbl_mietende")
         layout.addWidget(self.lbl_mietende,10,0)
-        self.cmb_mietende = QComboBox(self)
-        self.cmb_mietende.setObjectName(u"cmb_mietende")
-        self.cmb_mietende.setEditable(True)
-        layout.addWidget(self.cmb_mietende,10,1)
+        self.dt_mietende = QDateEdit(self)
+        self.dt_mietende.setObjectName(u"dt_mietende")
+        self.dt_mietende.setDisplayFormat("dd.MM.yyyy")
+        self.dt_mietende.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_mietende,10,1)
         self.lbl_personen = QLabel("Anzahl Personen")
         self.lbl_personen.setObjectName(u"lbl_personen")
         layout.addWidget(self.lbl_personen,11,0)
@@ -709,8 +959,8 @@ class dlg_add_mieter(QDialog):
                 weid, wohnung = self.cmb_weid.currentText(), self.cmb_nummer.currentText()
                 vorname, name = self.cmb_vorname.currentText(), self.cmb_name.currentText()
                 strasse, hausnummer = self.cmb_strasse.currentText(), self.cmb_hausnummer.currentText()
-                plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.cmb_mietbeginn.currentText()
-                mietende, personen = self.cmb_mietende.currentText(), self.cmb_personen.currentText()
+                plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.dt_mietbeginn.date().toString(self.dt_mietbeginn.displayFormat())
+                mietende, personen = self.dt_mietende.date().toString(self.dt_mietende.displayFormat()), self.cmb_personen.currentText()
                 mieter =(weid,wohnung,vorname,name,strasse,hausnummer,plz, ort, mietbeginn, mietende, personen)
                 sql_insert('Vermietung',mieter)
                 msg_ok()    
@@ -793,17 +1043,19 @@ class dlg_update_mieter(QDialog):
         self.lbl_mietbeginn = QLabel("Mietbeginn")
         self.lbl_mietbeginn.setObjectName(u"lbl_mietbeginn")
         layout.addWidget(self.lbl_mietbeginn,9,0)
-        self.cmb_mietbeginn = QComboBox(self)
-        self.cmb_mietbeginn.setObjectName(u"cmb_mietbeginn")
-        self.cmb_mietbeginn.setEditable(True)
-        layout.addWidget(self.cmb_mietbeginn,9,1)
+        self.dt_mietbeginn = QDateEdit(self)
+        self.dt_mietbeginn.setObjectName(u"dt_mietbeginn")
+        self.dt_mietbeginn.setDisplayFormat("dd.MM.yyyy")
+        #self.dt_mietbeginn.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_mietbeginn,9,1)
         self.lbl_mietende = QLabel("Mietende")
         self.lbl_mietende.setObjectName(u"lbl_mietende")
         layout.addWidget(self.lbl_mietende,10,0)
-        self.cmb_mietende = QComboBox(self)
-        self.cmb_mietende.setObjectName(u"cmb_mietende")
-        self.cmb_mietende.setEditable(True)
-        layout.addWidget(self.cmb_mietende,10,1)
+        self.dt_mietende = QDateEdit(self)
+        self.dt_mietende.setObjectName(u"dt_mietende")
+        self.dt_mietende.setDisplayFormat("dd.MM.yyyy")
+        #self.dt_mietende.setDate(datetime.datetime.now().date())
+        layout.addWidget(self.dt_mietende,10,1)
         self.lbl_personen = QLabel("Anzahl Personen")
         self.lbl_personen.setObjectName(u"lbl_personen")
         layout.addWidget(self.lbl_personen,11,0)
@@ -816,6 +1068,7 @@ class dlg_update_mieter(QDialog):
         global x
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Vermietung',id)
+        print(data)
         #self.cmb_id.addItem(str(data[0][0]))
         self.cmb_weid.addItem(str(data[0][1]))
         self.cmb_nummer.addItem(str(data[0][2]))
@@ -825,8 +1078,8 @@ class dlg_update_mieter(QDialog):
         self.cmb_hausnummer.addItem(str(data[0][6]))
         self.cmb_plz.addItem(str(data[0][7]))
         self.cmb_ort.addItem(str(data[0][8]))
-        self.cmb_mietbeginn.addItem(str(data[0][9]))
-        self.cmb_mietende.addItem(str(data[0][10]))
+        self.dt_mietbeginn.setDate(QDate.fromString(str(data[0][9]),"dd.MM.yyyy"))
+        self.dt_mietende.setDate(QDate.fromString(str(data[0][10]),"dd.MM.yyyy"))
         self.cmb_personen.addItem(str(data[0][11]))
 
     def action_ok(self):
@@ -834,6 +1087,7 @@ class dlg_update_mieter(QDialog):
         if valid:
             pdData = fetch_db_pd('Vermietung')
             pdData['WEID'] = pdData['WEID'].astype(str)
+            data = fetch_data('Vermietung',x)
                             
             def msg_exist():
                 dlg = QMessageBox(self)
@@ -847,15 +1101,15 @@ class dlg_update_mieter(QDialog):
                 dlg.setText("Der Datensatz wurde angelegt")
                 button = dlg.exec_()
             
-            if self.cmb_weid.currentText() in pdData['WEID'].values:
+            if self.cmb_weid.currentText() != data[0][1] and self.cmb_weid.currentText() in pdData['WEID'].values:
                 msg_exist()
             else:
                 data = fetch_data('Vermietung', x)
                 weid, wohnung = self.cmb_weid.currentText(), self.cmb_nummer.currentText()
                 vorname, name = self.cmb_vorname.currentText(), self.cmb_name.currentText()
                 strasse, hausnummer = self.cmb_strasse.currentText(), self.cmb_hausnummer.currentText()
-                plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.cmb_mietbeginn.currentText()
-                mietende, personen = self.cmb_mietende.currentText(), self.cmb_personen.currentText()
+                plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.dt_mietbeginn.date().toString(self.dt_mietbeginn.displayFormat())
+                mietende, personen = self.dt_mietende.date().toString(self.dt_mietende.displayFormat()), self.cmb_personen.currentText()
                 mieter =(weid,wohnung,vorname,name,strasse,hausnummer,plz, ort, mietbeginn, mietende, personen, data[0][0])
                 sql_update('Vermietung',mieter)
                 msg_ok()    
@@ -1318,21 +1572,33 @@ class dlg_add_zaehler(QDialog):
         self.cmb_gemeinschaft.setObjectName(u"cmb_gemeinschaft")
         self.cmb_gemeinschaft.setEditable(True)
         layout.addWidget(self.cmb_gemeinschaft,3,1)
+        self.lbl_wohnung = QLabel("Wohnung")
+        self.lbl_wohnung.setObjectName(u"lbl_wohnung")
+        layout.addWidget(self.lbl_wohnung,4,0)
+        self.cmb_wohnung = QComboBox(self)
+        self.cmb_wohnung.setObjectName(u"cmb_wohnung")
+        self.cmb_wohnung.setEditable(True)
+        layout.addWidget(self.cmb_wohnung,4,1)
         self.lbl_ort = QLabel("Ort")
         self.lbl_ort.setObjectName(u"lbl_ort")
-        layout.addWidget(self.lbl_ort,4,0)
+        layout.addWidget(self.lbl_ort,5,0)
         self.cmb_ort = QComboBox(self)
         self.cmb_ort.setObjectName(u"cmb_ort")
         self.cmb_ort.setEditable(True)
-        layout.addWidget(self.cmb_ort,4,1)
+        layout.addWidget(self.cmb_ort,5,1)
         self.setLayout(layout)
         
         pdData = fetch_db_pd('Zaehlertypen')
         for i, row in pdData.iterrows():
             self.cmb_typ.addItem(str(row[1]))
-        pdData = fetch_db_pd('Wohnungen')
-        for i, row in pdData.iterrows():
-            self.cmb_ort.addItem(str(row[1]))     
+        if self.cmb_gemeinschaft.currentText() == "J":
+            pdData =fetch_db_pd('Gemeinschaftsflaechen')
+            for i, row in pdData.iterrows():
+                self.cmb_wohnung.addItem(str(row[1]))
+        elif self.cmb_gemeinschaft.currentText() == "N":
+            pdData = fetch_db_pd('Wohnungen')
+            for i, row in pdData.iterrows():
+                self.cmb_wohnung.addItem(str(row[1]))     
 
     def action_ok(self):
         valid = True #re.match(r"\b\d{5}\b", self.cmb_zaehler.currentText())
@@ -1355,7 +1621,8 @@ class dlg_add_zaehler(QDialog):
             if self.cmb_nummer.currentText() in pdData['Nummer'].values:
                 msg_exist()
             else:
-                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(), self.cmb_ort.currentText())
+                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(),
+                           self.cmb_wohnung.currentText(), self.cmb_ort.currentText())
                 sql_insert('Zaehler',zaehler)
                 msg_ok()    
                 self.accept()
@@ -1399,13 +1666,20 @@ class dlg_update_zaehler(QDialog):
         self.cmb_gemeinschaft.setObjectName(u"cmb_gemeinschaft")
         self.cmb_gemeinschaft.setEditable(True)
         layout.addWidget(self.cmb_gemeinschaft,3,1)
+        self.lbl_wohnung = QLabel("Wohnung")
+        self.lbl_wohnung.setObjectName(u"lbl_wohnung")
+        layout.addWidget(self.lbl_wohnung,4,0)
+        self.cmb_wohnung = QComboBox(self)
+        self.cmb_wohnung.setObjectName(u"cmb_wohnung")
+        self.cmb_wohnung.setEditable(True)
+        layout.addWidget(self.cmb_wohnung,4,1)
         self.lbl_ort = QLabel("Ort")
         self.lbl_ort.setObjectName(u"lbl_ort")
-        layout.addWidget(self.lbl_ort,4,0)
+        layout.addWidget(self.lbl_ort,5,0)
         self.cmb_ort = QComboBox(self)
         self.cmb_ort.setObjectName(u"cmb_ort")
         self.cmb_ort.setEditable(True)
-        layout.addWidget(self.cmb_ort,4,1)
+        layout.addWidget(self.cmb_ort,5,1)
         self.setLayout(layout)
         
         global x
@@ -1414,13 +1688,15 @@ class dlg_update_zaehler(QDialog):
         self.cmb_nummer.addItem(str(data[0][1]))
         self.cmb_typ.addItem(str(data[0][2]))
         self.cmb_gemeinschaft.addItem(str(data[0][3]))
-        self.cmb_ort.addItem(str(data[0][4]))
+        self.cmb_wohnung.addItem(str(data[0][4]))
+        self.cmb_ort.addItem(str(data[0][5]))
 
     def action_ok(self):
         valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
         if valid:
             pdData = fetch_db_pd('Zaehler')
             pdData['Nummer'] = pdData['Nummer'].astype(str)
+            data = fetch_data('Zaehler',x)
                             
             def msg_exist():
                 dlg = QMessageBox(self)
@@ -1434,11 +1710,12 @@ class dlg_update_zaehler(QDialog):
                 dlg.setText("Der Datensatz wurde angelegt")
                 button = dlg.exec_()
             
-            if self.cmb_nummer.currentText() in pdData['Nummer'].values:
+            if self.cmb_nummer.currentText() != data[0][1] and self.cmb_nummer.currentText() in pdData['Nummer'].values:
                 msg_exist()
             else:
                 data = fetch_data('Zaehler', x)
-                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(), self.cmb_ort.currentText(), data[0][0])
+                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(),
+                           self.cmb_wohnung.currentText(), self.cmb_ort.currentText(), data[0][0])
                 sql_update('Zaehler',zaehler)
                 msg_ok()    
                 self.accept()
@@ -1571,8 +1848,8 @@ class Ui_frm_main(object):
     def setupUi(self, frm_main):
         if not frm_main.objectName():
             frm_main.setObjectName(u"frm_main")
-        frm_main.resize(800, 600)
-        frm_main.setMinimumSize(QSize(800, 600))
+        frm_main.resize(1000, 600)
+        frm_main.setMinimumSize(QSize(1000, 600))
         #frm_main.setMaximumSize(QSize(800, 600))
         self.actionBeenden = QAction(frm_main)
         self.actionBeenden.setObjectName(u"actionBeenden")
@@ -1632,7 +1909,13 @@ class Ui_frm_main(object):
         self.lbl_ablesung.setAlignment(Qt.AlignCenter)
         self.tbl_ablesung = QTableView(self.p_ablesung)
         self.tbl_ablesung.setObjectName(u"tbl_ablesung")
-        self.tbl_ablesung.setGeometry(QRect(10, 30, 760, 450))
+        self.tbl_ablesung.setGeometry(QRect(10, 30, 950, 400))
+        self.btn_ablesung_add = QPushButton(self.p_ablesung)
+        self.btn_ablesung_add.setObjectName(u"btn_ablesung_add")
+        self.btn_ablesung_add.setGeometry(QRect(50,450,150,25))
+        self.btn_ablesung_edit = QPushButton(self.p_ablesung)
+        self.btn_ablesung_edit.setObjectName(u"btn_ablesung_edit")
+        self.btn_ablesung_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_ablesung)
         
         self.p_einheiten = QWidget()
@@ -1644,7 +1927,7 @@ class Ui_frm_main(object):
         self.lbl_einheiten.setAlignment(Qt.AlignCenter)
         self.tbl_einheiten = QTableView(self.p_einheiten)
         self.tbl_einheiten.setObjectName(u"tbl_einheiten")
-        self.tbl_einheiten.setGeometry(QRect(10, 30, 760, 350))
+        self.tbl_einheiten.setGeometry(QRect(10, 30, 950, 400))
         self.btn_einheiten_add = QPushButton(self.p_einheiten)
         self.btn_einheiten_add.setObjectName(u"btn_einheiten_add")
         self.btn_einheiten_add.setGeometry(QRect(50,450,150,25))
@@ -1657,7 +1940,7 @@ class Ui_frm_main(object):
         self.p_gemeinschaft.setObjectName(u"p_gemeinschaft")
         self.tbl_gemeinschaft = QTableView(self.p_gemeinschaft)
         self.tbl_gemeinschaft.setObjectName(u"tbl_gemeinschaft")
-        self.tbl_gemeinschaft.setGeometry(QRect(10, 30, 760, 350))
+        self.tbl_gemeinschaft.setGeometry(QRect(10, 30, 950, 400))
         self.lbl_gemeinschaft = QLabel(self.p_gemeinschaft)
         self.lbl_gemeinschaft.setObjectName(u"lbl_gemeinschaft")
         self.lbl_gemeinschaft.setGeometry(QRect(0, 0, 780, 20))
@@ -1680,7 +1963,7 @@ class Ui_frm_main(object):
         self.lbl_kosten.setAlignment(Qt.AlignCenter)
         self.tbl_kosten = QTableView(self.p_kosten)
         self.tbl_kosten.setObjectName(u"tbl_kosten")
-        self.tbl_kosten.setGeometry(QRect(10, 30, 760, 350))
+        self.tbl_kosten.setGeometry(QRect(10, 30, 950, 400))
         self.btn_kosten_add = QPushButton(self.p_kosten)
         self.btn_kosten_add.setObjectName(u"btn_kosten_add")
         self.btn_kosten_add.setGeometry(QRect(50,450,150,25))
@@ -1698,7 +1981,7 @@ class Ui_frm_main(object):
         self.lbl_kostenarten.setAlignment(Qt.AlignCenter)
         self.tbl_kostenarten = QTableView(self.p_kostenarten)
         self.tbl_kostenarten.setObjectName(u"tbl_kostenarten")
-        self.tbl_kostenarten.setGeometry(QRect(10, 30, 760, 350))
+        self.tbl_kostenarten.setGeometry(QRect(10, 30, 950, 400))
         self.btn_kostenarten_add = QPushButton(self.p_kostenarten)
         self.btn_kostenarten_add.setObjectName(u"btn_kostenarten_add")
         self.btn_kostenarten_add.setGeometry(QRect(50,450,150,25))
@@ -1711,7 +1994,7 @@ class Ui_frm_main(object):
         self.p_umlageschluessel.setObjectName(u"p_umlageschluessel")
         self.tbl_umlageschluessel = QTableView(self.p_umlageschluessel)
         self.tbl_umlageschluessel.setObjectName(u"tbl_umlageschluessel")
-        self.tbl_umlageschluessel.setGeometry(QRect(10, 30, 760, 400))
+        self.tbl_umlageschluessel.setGeometry(QRect(10, 30, 950, 400))
         self.lbl_umlageschluessel = QLabel(self.p_umlageschluessel)
         self.lbl_umlageschluessel.setObjectName(u"lbl_umlageschluessel")
         self.lbl_umlageschluessel.setGeometry(QRect(0, 0, 780, 20))
@@ -1729,7 +2012,7 @@ class Ui_frm_main(object):
         self.p_stockwerke.setObjectName(u"p_stockwerke")
         self.tbl_stockwerke = QTableView(self.p_stockwerke)
         self.tbl_stockwerke.setObjectName(u"tbl_stockwerke")
-        self.tbl_stockwerke.setGeometry(QRect(10, 30, 760, 400))
+        self.tbl_stockwerke.setGeometry(QRect(10, 30, 950, 400))
         self.lbl_stockwerke = QLabel(self.p_stockwerke)
         self.lbl_stockwerke.setObjectName(u"lbl_stockwerke")
         self.lbl_stockwerke.setGeometry(QRect(0, 0, 780, 20))
@@ -1743,11 +2026,22 @@ class Ui_frm_main(object):
         self.btn_stockwerke_edit.setGeometry(QRect(250,450,150,25))
         self.stackedWidget.addWidget(self.p_stockwerke)
         
+        self.p_verbrauch = QWidget()
+        self.p_verbrauch.setObjectName(u"p_verbrauch")
+        self.tbl_verbrauch = QTableView(self.p_verbrauch)
+        self.tbl_verbrauch.setGeometry(QRect(10, 30, 950, 400))
+        self.lbl_verbrauch = QLabel(self.p_verbrauch)
+        self.lbl_verbrauch.setObjectName(u"lbl_verbrauch")
+        self.lbl_verbrauch.setGeometry(QRect(0, 0, 780, 20))
+        self.lbl_verbrauch.setFont(font)
+        self.lbl_verbrauch.setAlignment(Qt.AlignCenter)
+        self.stackedWidget.addWidget(self.p_verbrauch)
+        
         self.p_vermietung = QWidget()
         self.p_vermietung.setObjectName(u"p_vermietung")
         self.tbl_vermietung = QTableView(self.p_vermietung)
         self.tbl_vermietung.setObjectName(u"tbl_vermietung")
-        self.tbl_vermietung.setGeometry(QRect(10, 30, 760, 400))
+        self.tbl_vermietung.setGeometry(QRect(10, 30, 950, 400))
         self.lbl_vermietung = QLabel(self.p_vermietung)
         self.lbl_vermietung.setObjectName(u"lbl_vermietung")
         self.lbl_vermietung.setGeometry(QRect(0, 0, 780, 20))
@@ -1765,7 +2059,7 @@ class Ui_frm_main(object):
         self.p_wohnungen.setObjectName(u"p_wohnungen")
         self.tbl_wohnungen = QTableView(self.p_wohnungen)
         self.tbl_wohnungen.setObjectName(u"tbl_wohnungen")
-        self.tbl_wohnungen.setGeometry(QRect(10, 30, 760, 350))
+        self.tbl_wohnungen.setGeometry(QRect(10, 30, 950, 400))
         self.lbl_wohnungen = QLabel(self.p_wohnungen)
         self.lbl_wohnungen.setObjectName(u"lbl_wohnungen")
         self.lbl_wohnungen.setGeometry(QRect(0, 0, 780, 20))
@@ -1783,7 +2077,7 @@ class Ui_frm_main(object):
         self.p_zaehler.setObjectName(u"p_zaehler")
         self.tbl_zaehler = QTableView(self.p_zaehler)
         self.tbl_zaehler.setObjectName(u"tbl_zaehler")
-        self.tbl_zaehler.setGeometry(QRect(10, 30, 760, 400))
+        self.tbl_zaehler.setGeometry(QRect(10, 30, 950, 400))
         self.lbl_zaehler = QLabel(self.p_zaehler)
         self.lbl_zaehler.setObjectName(u"lbl_zaehler")
         self.lbl_zaehler.setGeometry(QRect(0, 0, 780, 20))
@@ -1801,7 +2095,7 @@ class Ui_frm_main(object):
         self.p_zaehlertypen.setObjectName(u"p_zaehlertypen")
         self.tbl_zaehlertypen = QTableView(self.p_zaehlertypen)
         self.tbl_zaehlertypen.setObjectName(u"tbl_zaehlertypen")
-        self.tbl_zaehlertypen.setGeometry(QRect(10, 30, 760, 400))
+        self.tbl_zaehlertypen.setGeometry(QRect(10, 30, 950, 400))
         self.lbl_zaehlertypen = QLabel(self.p_zaehlertypen)
         self.lbl_zaehlertypen.setObjectName(u"lbl_zaehlertypen")
         self.lbl_zaehlertypen.setGeometry(QRect(0, 0, 780, 20))
@@ -1885,6 +2179,8 @@ class Ui_frm_main(object):
         self.actionVerbrauch.setText(QCoreApplication.translate("frm_main", u"Verbrauch", None))
         self.lbl_main.setText(QCoreApplication.translate("frm_main", u" ", None))
         self.lbl_ablesung.setText(QCoreApplication.translate("frm_main", u"Ablesung", None))
+        self.btn_ablesung_add.setText(QCoreApplication.translate("frm_main",u"Erfassen", None))
+        self.btn_ablesung_edit.setText(QCoreApplication.translate("frm_main",u"Bearbeiten", None))
         self.lbl_einheiten.setText(QCoreApplication.translate("frm_main", u"Einheiten", None))
         self.btn_einheiten_add.setText(QCoreApplication.translate("frm_main",u"Neue Einheit", None))
         self.btn_einheiten_edit.setText(QCoreApplication.translate("frm_main",u"Einheit bearbeiten", None))

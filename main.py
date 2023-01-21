@@ -21,9 +21,10 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
     def __init__(self):
         super().__init__()
         self.setupUi(self)
-        
         self.stackedWidget.setCurrentWidget(self.p_main)
         self.actionAblesung.triggered.connect(self.show_ablesung)
+        self.btn_ablesung_add.clicked.connect(self.btn_ablesung_add_clicked)
+        self.btn_ablesung_edit.clicked.connect(self.btn_ablesung_edit_clicked)
         self.actionEinheiten.triggered.connect(self.show_einheiten)
         self.btn_einheiten_add.clicked.connect(self.btn_einheiten_add_clicked)
         self.btn_einheiten_edit.clicked.connect(self.btn_einheiten_edit_clicked)
@@ -42,6 +43,7 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
         self.actionUmlageschluessel.triggered.connect(self.show_umlageschluessel)
         self.btn_umlageschluessel_add.clicked.connect(self.btn_schluessel_add_clicked)
         self.btn_umlageschluessel_edit.clicked.connect(self.btn_schluessel_edit_clicked)
+        self.actionVerbrauch.triggered.connect(self.show_verbrauch)
         self.actionVermietung.triggered.connect(self.show_vermietung)
         self.btn_vermietung_add.clicked.connect(self.btn_vermietung_add_clicked)
         self.btn_vermietung_edit.clicked.connect(self.btn_vermietung_edit_clicked)
@@ -55,6 +57,13 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
         self.btn_zaehlertypen_add.clicked.connect(self.btn_zaehlertypen_add_clicked)
         self.btn_zaehlertypen_edit.clicked.connect(self.btn_zaehlertypen_edit_clicked)
         self.actionBeenden.triggered.connect(self.close)
+    
+    def btn_ablesung_add_clicked(self, s):
+        dlg = res.dlg_add_ablesung()
+        if dlg.exec():
+            self.show_ablesung()
+        else:
+            pass
         
     def btn_einheiten_add_clicked(self, s):
         dlg = res.dlg_add_einheiten()
@@ -125,6 +134,22 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
             self.show_zaehlertypen()
         else:
             pass
+    
+    def btn_ablesung_edit_clicked(self):
+            self.stackedWidget.setCurrentWidget(self.p_ablesung)
+            model = self.tbl_ablesung.model()
+            rows = sorted(set(index.row() for index in
+                        self.tbl_ablesung.selectedIndexes()))
+            if rows:
+                for row in rows:
+                    #print('Row %d is selected' % row)
+                    id = model.data(model.index(row,0))
+                #print(id)
+                dlg = res.dlg_update_ablesung(id)
+                if dlg.exec():
+                    self.show_ablesung()
+                else:
+                    pass
     
     def btn_einheiten_edit_clicked(self):
             self.stackedWidget.setCurrentWidget(self.p_einheiten)
@@ -324,6 +349,11 @@ class Frm_main(QMainWindow, res.Ui_frm_main):
         self.stackedWidget.setCurrentWidget(self.p_stockwerke)
         model = res.PandasModel(res.fetch_db_pd('Stockwerke'))
         self.tbl_stockwerke.setModel(model)
+    
+    def show_verbrauch(self):
+        self.stackedWidget.setCurrentWidget(self.p_verbrauch)
+        model = res.PandasModel(res.fetch_db_pd('Verbrauch'))
+        self.tbl_verbrauch.setModel(model)
     
     def show_vermietung(self):
         self.stackedWidget.setCurrentWidget(self.p_vermietung)

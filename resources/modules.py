@@ -41,13 +41,41 @@ def fetch_data(table,id):
         conn = create_connection(database)
         cur = conn.cursor()
         sql = 'SELECT * FROM {} WHERE id = {}'.format(table, id)
+        #print(sql)
+        cur.execute(sql)
+        data = cur.fetchall()
+        #print(data[0][2])
+        print("Daten erfolgreich eingelesen")
+        cur.close()
+        
+    except sqlite3.Error as error:
+        print("fetch_data. Fehler beim Ausführen der SQL Query:",error)
+    finally:
+        if conn:
+            conn.close()
+            print("SQLite geschlossen")
+    return data
+
+def fetch_data2(table, key, value):
+    try:
+        value += 0
+    except TypeError as error:
+        value = "'" + value + "'"
+        #print(value)
+
+    try:
+        database = 'standard.sqlite'
+        conn = create_connection(database)
+        cur = conn.cursor()
+        sql = 'SELECT * FROM {} WHERE {} = {}'.format(table, key, value)
         cur.execute(sql)
         data = cur.fetchall()
         print("Daten erfolgreich eingelesen")
         cur.close()
         
     except sqlite3.Error as error:
-        print("fetch_data. Fehler beim Ausführen der SQL Query:",error)
+        print("fetch_data2. Fehler beim Ausführen der SQL Query:",error)
+       
     finally:
         if conn:
             conn.close()
@@ -482,6 +510,10 @@ def impdata():
 def main():
     pass
     #impdata()
-
+    pdData = fetch_db_pd('Vermietung')
+    
+    pdData = pdData.sort_values('WEID')
+    print(pdData)
+        
 if __name__ == '__main__':
     main()
