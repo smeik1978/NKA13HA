@@ -19,7 +19,7 @@ from PySide6.QtWidgets import (QComboBox, QDialog, QDateEdit,
                                QStackedWidget, QStatusBar, QTableView,
                                QVBoxLayout, QWidget)
 
-from .modules import PandasModel, sql_insert, sql_update, fetch_db_pd, fetch_data, fetch_data2
+from .modules import sql_insert, sql_update, fetch_db_pd, fetch_data, fetch_data2,create_sql_schema
 
 class dlg_add_ablesung(QDialog):
     def __init__(self) -> None:
@@ -125,38 +125,32 @@ class dlg_add_ablesung(QDialog):
                     self.cmb_nummer.addItem(name[1])
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_zaehler.currentText())
-        if valid:
-            pdData = fetch_db_pd('Ablesung')
-            pdData['Zaehlernummer'] = pdData['Zaehlernummer'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Dieser Zähler wurde schon erfasst.")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_nummer.currentText() in pdData['Zaehlernummer'].values:
-                msg_exist()
-            else:
-                ablesung = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_weid.currentText(), self.cmb_wohnung.currentText(), self.cmb_typ.currentText(),
-                            self.cmb_nummer.currentText(), self.cmb_anfang.currentText(), self.cmb_ende.currentText())
-                sql_insert('Ablesung',ablesung)
-                msg_ok()
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Ablesung')
+        pdData['Zaehlernummer'] = pdData['Zaehlernummer'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Dieser Zähler wurde schon erfasst.")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_nummer.currentText() in pdData['Zaehlernummer'].values:
+            msg_exist()
+        else:
+            ablesung = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_weid.currentText(), self.cmb_wohnung.currentText(), self.cmb_typ.currentText(),
+                        self.cmb_nummer.currentText(), self.cmb_anfang.currentText(), self.cmb_ende.currentText())
+            sql_insert('Ablesung',ablesung)
+            msg_ok()
+            self.accept()
 
 class dlg_update_ablesung(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -221,7 +215,7 @@ class dlg_update_ablesung(QDialog):
         layout.addWidget(self.cmb_ende,7,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Ablesung',id)
         #self.cmb_datum.addItem(str(data[0][1]))
@@ -235,37 +229,30 @@ class dlg_update_ablesung(QDialog):
         
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Ablesung')
-            pdData['Zaehlernummer'] = pdData['Zaehlernummer'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese Nummer gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_nummer.currentText() in pdData['Zaehlernummer'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Ablesung', x)
-                ablesung = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_weid.currentText(), self.cmb_ort.currentText(), self.cmb_typ.currentText(),
-                            self.cmb_nummer.currentText(), self.cmb_anfang.currentText(), self.cmb_ende.currentText(), data[0][0])
-                sql_update('Ablesung',ablesung)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Ablesung')
+        pdData['Zaehlernummer'] = pdData['Zaehlernummer'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese Nummer gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        if self.cmb_nummer.currentText() != data[0][5] and self.cmb_nummer.currentText() in pdData['Zaehlernummer'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Ablesung', x)
+            ablesung = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_weid.currentText(), self.cmb_ort.currentText(), self.cmb_typ.currentText(),
+                        self.cmb_nummer.currentText(), self.cmb_anfang.currentText(), self.cmb_ende.currentText(), data[0][0])
+            sql_update('Ablesung',ablesung)
+            msg_ok()    
+            self.accept()
 
 class dlg_add_einheiten(QDialog):
     def __init__(self) -> None:
@@ -294,38 +281,32 @@ class dlg_add_einheiten(QDialog):
             self.cmb_einheit.addItem(str(row[1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_einheit.currentText())
-        if valid:
-            pdData = fetch_db_pd('Einheiten')
-            pdData['Einheit'] = pdData['Einheit'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese Einheit gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_einheit.currentText() in pdData['Einheit'].values:
-                msg_exist()
-            else:
-                einheit = self.cmb_einheit.currentText()
-                einheiten =([einheit]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
-                sql_insert('Einheiten',einheiten)
-                msg_ok()    
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Einheiten')
+        pdData['Einheit'] = pdData['Einheit'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese Einheit gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_einheit.currentText() in pdData['Einheit'].values:
+            msg_exist()
+        else:
+            einheit = self.cmb_einheit.currentText()
+            einheiten =([einheit]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+            sql_insert('Einheiten',einheiten)
+            msg_ok()    
+            self.accept()
 
 class dlg_update_einheiten(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -347,44 +328,38 @@ class dlg_update_einheiten(QDialog):
         layout.addWidget(self.cmb_einheit,1,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Einheiten',id)
         self.cmb_einheit.addItem(str(data[0][1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Einheiten')
-            pdData['Einheit'] = pdData['Einheit'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese Einheit gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_einheit.currentText() in pdData['Einheit'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Einheiten', x)
-                einheit = self.cmb_einheit.currentText()
-                einheiten =(einheit)
-                einheiten =(einheiten, data[0][0])
-                sql_update('Einheiten',einheiten)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Einheiten')
+        pdData['Einheit'] = pdData['Einheit'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese Einheit gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_einheit.currentText() != data[0][1] and self.cmb_einheit.currentText() in pdData['Einheit'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Einheiten', x)
+            einheit = self.cmb_einheit.currentText()
+            einheiten =(einheit)
+            einheiten =(einheiten, data[0][0])
+            sql_update('Einheiten',einheiten)
+            msg_ok()    
+            self.accept()
 
 class dlg_add_gemeinschaft(QDialog):
     def __init__(self) -> None:
@@ -413,38 +388,32 @@ class dlg_add_gemeinschaft(QDialog):
             self.cmb_bezeichnung.addItem(str(row[1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_einheit.currentText())
-        if valid:
-            pdData = fetch_db_pd('Gemeinschaftsflaechen')
-            pdData['Bezeichnung'] = pdData['Bezeichnung'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese Bezeichnung gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_bezeichnung.currentText() in pdData['Bezeichnung'].values:
-                msg_exist()
-            else:
-                bezeichnung = self.cmb_bezeichnung.currentText()
-                gemeinschaft =([bezeichnung]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
-                sql_insert('Gemeinschaftsflaechen',gemeinschaft)
-                msg_ok()    
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Gemeinschaftsflaechen')
+        pdData['Bezeichnung'] = pdData['Bezeichnung'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese Bezeichnung gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_bezeichnung.currentText() in pdData['Bezeichnung'].values:
+            msg_exist()
+        else:
+            bezeichnung = self.cmb_bezeichnung.currentText()
+            gemeinschaft =([bezeichnung]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+            sql_insert('Gemeinschaftsflaechen',gemeinschaft)
+            msg_ok()    
+            self.accept()
 
 class dlg_update_gemeinschaft(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -466,44 +435,38 @@ class dlg_update_gemeinschaft(QDialog):
         layout.addWidget(self.cmb_bezeichnung,1,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Gemeinschaftsflaechen',id)
         self.cmb_bezeichnung.addItem(str(data[0][1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Gemeinschaftsflaechen')
-            pdData['Bezeichnung'] = pdData['Bezeichnung'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese Bezeichnung gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_bezeichnung.currentText() in pdData['Bezeichnung'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Gemeinschaftsflaechen', x)
-                bezeichnung = self.cmb_bezeichnung.currentText()
-                gemeinschaft =(bezeichnung)
-                gemeinschaft =(gemeinschaft, data[0][0])
-                sql_update('Gemeinschaftsflaechen',gemeinschaft)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Gemeinschaftsflaechen')
+        pdData['Bezeichnung'] = pdData['Bezeichnung'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese Bezeichnung gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_bezeichnung.currentText() != data[0][1] and self.cmb_bezeichnung.currentText() in pdData['Bezeichnung'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Gemeinschaftsflaechen', x)
+            bezeichnung = self.cmb_bezeichnung.currentText()
+            gemeinschaft =(bezeichnung)
+            gemeinschaft =(gemeinschaft, data[0][0])
+            sql_update('Gemeinschaftsflaechen',gemeinschaft)
+            msg_ok()    
+            self.accept()
 
 class dlg_add_kosten(QDialog):
     def __init__(self) -> None:
@@ -578,38 +541,32 @@ class dlg_add_kosten(QDialog):
             self.cmb_einheit.addItem(str(row[1]))     
 
     def action_ok(self):
-        valid = True #re.match(r'^\d{2}\.\d{2}\.\d{4}$', self.cmb_datum.currentText())
-        if valid:
-            pdData = fetch_db_pd('Kosten')
-            pdData['Leistung'] = pdData['Leistung'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese kosten gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_leistung.currentText() in pdData['Leistung'].values:
-                msg_exist()
-            else:
-                kosten = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
-                          self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText())
-                sql_insert('Kosten',kosten)
-                msg_ok()    
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Kosten')
+        pdData['Leistung'] = pdData['Leistung'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Das Datum muss im Format xx.xx.xxxx ("01.01.2022", "31.12.2025") sein')
+            dlg.setText("Diese kosten gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_leistung.currentText() in pdData['Leistung'].values:
+            msg_exist()
+        else:
+            kosten = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
+                        self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText())
+            sql_insert('Kosten',kosten)
+            msg_ok()    
+            self.accept()
 
 class dlg_update_kosten(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -657,7 +614,7 @@ class dlg_update_kosten(QDialog):
         self.cmb_betrag = QComboBox(self)
         self.cmb_betrag.setObjectName(u"cmb_betrag")
         self.cmb_betrag.setEditable(True)
-        layout.addWidget(self.cmb_leistung,5,1)
+        layout.addWidget(self.cmb_betrag,5,1)
         self.lbl_menge = QLabel("Menge")
         self.lbl_menge.setObjectName(u"lbl_menge")
         layout.addWidget(self.lbl_menge,6,0)
@@ -674,47 +631,44 @@ class dlg_update_kosten(QDialog):
         layout.addWidget(self.cmb_einheit,7,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Kosten',id)
-        self.cmb_nummer.addItem(str(data[0][1]))
-        self.cmb_typ.addItem(str(data[0][2]))
-        self.cmb_gemeinschaft.addItem(str(data[0][3]))
-        self.cmb_ort.addItem(str(data[0][4]))
+        self.dt_datum.setDate(QDate.fromString(str(data[0][1]),"dd.MM.yyyy"))
+        self.cmb_kostenart.addItem(str(data[0][2]))
+        self.cmb_firma.addItem(str(data[0][3]))
+        self.cmb_leistung.addItem(str(data[0][4]))
+        self.cmb_betrag.addItem(str(data[0][5]))
+        self.cmb_menge.addItem(str(data[0][6]))
+        self.cmb_einheit.addItem(str(data[0][7]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Kosten')
-            pdData['Leistung'] = pdData['Leistung'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diesen kosten gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_nummer.currentText() in pdData['Leistung'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Kosten', x)
-                kosten = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
-                          self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText(), data[0][0])
-                sql_update('Kosten',kosten)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Kosten')
+        pdData['Leistung'] = pdData['Leistung'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Das Datum muss im Format xx.xx.xxxx ("01.01.2022", "31.12.2025") sein')
+            dlg.setText("Diesen kosten gibt es schon")
             button = dlg.exec_()
-
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_leistung.currentText() != data[0][4] and self.cmb_leistung.currentText() in pdData['Leistung'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Kosten', x)
+            kosten = (self.dt_datum.date().toString(self.dt_datum.displayFormat()), self.cmb_kostenart.currentText(), self.cmb_firma.currentText(), self.cmb_leistung.currentText(),
+                        self.cmb_betrag.currentText(), self.cmb_menge.currentText(), self.cmb_einheit.currentText(), data[0][0])
+            sql_update('Kosten',kosten)
+            msg_ok()    
+            self.accept()
+        
 class dlg_add_kostenarten(QDialog):
     def __init__(self) -> None:
         super().__init__()
@@ -742,38 +696,32 @@ class dlg_add_kostenarten(QDialog):
             self.cmb_kostenart.addItem(str(row[1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_kostenart.currentText())
-        if valid:
-            pdData = fetch_db_pd('Kostenarten')
-            pdData['Kostenart'] = pdData['Kostenart'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese Kostenart gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_kostenart.currentText() in pdData['Kostenart'].values:
-                msg_exist()
-            else:
-                kostenart = self.cmb_kostenart.currentText()
-                kostenarten =([kostenart]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
-                sql_insert('Kostenarten',kostenarten)
-                msg_ok()    
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Kostenarten')
+        pdData['Kostenart'] = pdData['Kostenart'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese Kostenart gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_kostenart.currentText() in pdData['Kostenart'].values:
+            msg_exist()
+        else:
+            kostenart = self.cmb_kostenart.currentText()
+            kostenarten =([kostenart]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+            sql_insert('Kostenarten',kostenarten)
+            msg_ok()    
+            self.accept()
 
 class dlg_update_kostenarten(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -795,44 +743,38 @@ class dlg_update_kostenarten(QDialog):
         layout.addWidget(self.cmb_kostenart,1,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Kostenarten',id)
         self.cmb_kostenart.addItem(str(data[0][1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Kostenarten')
-            pdData['Kostenart'] = pdData['Kostenart'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese Kostenart gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_kostenart.currentText() in pdData['Kostenart'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Kostenarten', x)
-                kostenart = self.cmb_kostenart.currentText()
-                kostenarten =(kostenart)
-                kostenarten =(kostenarten, data[0][0])
-                sql_update('Kostenarten',kostenarten)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Kostenarten')
+        pdData['Kostenart'] = pdData['Kostenart'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese Kostenart gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_kostenart.currentText() != data[0][1] and self.cmb_kostenart.currentText() in pdData['Kostenart'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Kostenarten', x)
+            kostenart = self.cmb_kostenart.currentText()
+            kostenarten =(kostenart)
+            kostenarten =(kostenarten, data[0][0])
+            sql_update('Kostenarten',kostenarten)
+            msg_ok()    
+            self.accept()
 
 class dlg_add_mieter(QDialog):
     def __init__(self) -> None:
@@ -955,6 +897,7 @@ class dlg_add_mieter(QDialog):
             
             if self.cmb_weid.currentText() in pdData['WEID'].values:
                 msg_exist()
+                
             else:
                 weid, wohnung = self.cmb_weid.currentText(), self.cmb_nummer.currentText()
                 vorname, name = self.cmb_vorname.currentText(), self.cmb_name.currentText()
@@ -962,6 +905,8 @@ class dlg_add_mieter(QDialog):
                 plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.dt_mietbeginn.date().toString(self.dt_mietbeginn.displayFormat())
                 mietende, personen = self.dt_mietende.date().toString(self.dt_mietende.displayFormat()), self.cmb_personen.currentText()
                 mieter =(weid,wohnung,vorname,name,strasse,hausnummer,plz, ort, mietbeginn, mietende, personen)
+                if mietende == '01.01.2020':
+                    mietende = ""
                 sql_insert('Vermietung',mieter)
                 msg_ok()    
                 self.accept()
@@ -972,6 +917,7 @@ class dlg_add_mieter(QDialog):
             button = dlg.exec_()
 
 class dlg_update_mieter(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -1046,7 +992,6 @@ class dlg_update_mieter(QDialog):
         self.dt_mietbeginn = QDateEdit(self)
         self.dt_mietbeginn.setObjectName(u"dt_mietbeginn")
         self.dt_mietbeginn.setDisplayFormat("dd.MM.yyyy")
-        #self.dt_mietbeginn.setDate(datetime.datetime.now().date())
         layout.addWidget(self.dt_mietbeginn,9,1)
         self.lbl_mietende = QLabel("Mietende")
         self.lbl_mietende.setObjectName(u"lbl_mietende")
@@ -1054,7 +999,6 @@ class dlg_update_mieter(QDialog):
         self.dt_mietende = QDateEdit(self)
         self.dt_mietende.setObjectName(u"dt_mietende")
         self.dt_mietende.setDisplayFormat("dd.MM.yyyy")
-        #self.dt_mietende.setDate(datetime.datetime.now().date())
         layout.addWidget(self.dt_mietende,10,1)
         self.lbl_personen = QLabel("Anzahl Personen")
         self.lbl_personen.setObjectName(u"lbl_personen")
@@ -1065,7 +1009,7 @@ class dlg_update_mieter(QDialog):
         layout.addWidget(self.cmb_personen,11,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Vermietung',id)
         print(data)
@@ -1085,9 +1029,9 @@ class dlg_update_mieter(QDialog):
     def action_ok(self):
         valid = re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
         if valid:
+            global data
             pdData = fetch_db_pd('Vermietung')
             pdData['WEID'] = pdData['WEID'].astype(str)
-            data = fetch_data('Vermietung',x)
                             
             def msg_exist():
                 dlg = QMessageBox(self)
@@ -1104,13 +1048,16 @@ class dlg_update_mieter(QDialog):
             if self.cmb_weid.currentText() != data[0][1] and self.cmb_weid.currentText() in pdData['WEID'].values:
                 msg_exist()
             else:
-                data = fetch_data('Vermietung', x)
+                #data = fetch_data('Vermietung', x)
                 weid, wohnung = self.cmb_weid.currentText(), self.cmb_nummer.currentText()
                 vorname, name = self.cmb_vorname.currentText(), self.cmb_name.currentText()
                 strasse, hausnummer = self.cmb_strasse.currentText(), self.cmb_hausnummer.currentText()
                 plz, ort, mietbeginn = self.cmb_plz.currentText(), self.cmb_ort.currentText(), self.dt_mietbeginn.date().toString(self.dt_mietbeginn.displayFormat())
                 mietende, personen = self.dt_mietende.date().toString(self.dt_mietende.displayFormat()), self.cmb_personen.currentText()
+                if mietende == '01.01.2000':
+                    mietende = 'None'
                 mieter =(weid,wohnung,vorname,name,strasse,hausnummer,plz, ort, mietbeginn, mietende, personen, data[0][0])
+
                 sql_update('Vermietung',mieter)
                 msg_ok()    
                 self.accept()
@@ -1147,38 +1094,32 @@ class dlg_add_stockwerke(QDialog):
             self.cmb_stockwerk.addItem(str(row[1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_stockwerk.currentText())
-        if valid:
-            pdData = fetch_db_pd('Stockwerke')
-            pdData['Stockwerk'] = pdData['Stockwerk'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Dieses Stockwerk gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_stockwerk.currentText() in pdData['Stockwerk'].values:
-                msg_exist()
-            else:
-                stockwerk = self.cmb_stockwerk.currentText()
-                stockwerke =([stockwerk]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
-                sql_insert('Stockwerke',stockwerke)
-                msg_ok()    
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Stockwerke')
+        pdData['Stockwerk'] = pdData['Stockwerk'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Dieses Stockwerk gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_stockwerk.currentText() in pdData['Stockwerk'].values:
+            msg_exist()
+        else:
+            stockwerk = self.cmb_stockwerk.currentText()
+            stockwerke =([stockwerk]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+            sql_insert('Stockwerke',stockwerke)
+            msg_ok()    
+            self.accept()
 
 class dlg_update_stockwerke(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -1200,163 +1141,262 @@ class dlg_update_stockwerke(QDialog):
         layout.addWidget(self.cmb_stockwerk,1,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Stockwerke',id)
         self.cmb_stockwerk.addItem(str(data[0][1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Stockwerke')
-            pdData['Stockwerk'] = pdData['Stockwerk'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Dieses Stockwerk gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_stockwerk.currentText() in pdData['Stockwerk'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Stockwerke', x)
-                stockwerk = self.cmb_stockwerk.currentText()
-                stockwerke =(stockwerk)
-                stockwerke =(stockwerke, data[0][0])
-                sql_update('Stockwerke',stockwerke)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Stockwerke')
+        pdData['Stockwerk'] = pdData['Stockwerk'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Dieses Stockwerk gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_stockwerk.currentText() != data[0][1] and self.cmb_stockwerk.currentText() in pdData['Stockwerk'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Stockwerke', x)
+            stockwerk = self.cmb_stockwerk.currentText()
+            stockwerke =(stockwerk)
+            stockwerke =(stockwerke, data[0][0])
+            sql_update('Stockwerke',stockwerke)
+            msg_ok()    
+            self.accept()
 
-class dlg_add_umlageschluessel(QDialog):
+class dlg_umlageschluessel(QDialog):
     def __init__(self) -> None:
         super().__init__()
         layout = QGridLayout()
-        self.setWindowTitle("Umlageschlüssel hinzufügen")
+        self.setWindowTitle("Umlageschlüssel ")
         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
         self.buttonBox = QDialogButtonBox(QBtn)
         self.buttonBox.accepted.connect(self.action_ok)
         self.buttonBox.rejected.connect(self.reject)
         layout.addWidget(self.buttonBox,12,1)
-        self.lbl_add_schluessel = QLabel("Schlüssel hinzufügen")
-        self.lbl_add_schluessel.setObjectName(u"lbl_add_schluessel")
-        layout.addWidget(self.lbl_add_schluessel,0,0)
-        self.lbl_schluessel = QLabel("schlüssel")
+        self.lbl_schluessel = QLabel("Schlüssel")
         self.lbl_schluessel.setObjectName(u"lbl_schluessel")
-        layout.addWidget(self.lbl_schluessel,1,0)
+        layout.addWidget(self.lbl_schluessel,0,0)
         self.cmb_schluessel = QComboBox(self)
         self.cmb_schluessel.setObjectName(u"cmb_schluessel")
         self.cmb_schluessel.setEditable(True)
-        layout.addWidget(self.cmb_schluessel,1,1)
+        layout.addWidget(self.cmb_schluessel,0,1)
+        self.lbl_tabelle1 = QLabel("Tabelle 1")
+        self.lbl_tabelle1.setObjectName(u"lbl_tabelle1")
+        layout.addWidget(self.lbl_tabelle1,1,0)
+        self.cmb_tabelle1 = QComboBox(self)
+        self.cmb_tabelle1.setObjectName(u"cmb_tabelle1")
+        self.cmb_tabelle1.setEditable(True)
+        self.cmb_tabelle1.currentIndexChanged.connect(self.updateWert1)
+        layout.addWidget(self.cmb_tabelle1,1,1)
+        self.lbl_wert1 = QLabel("Wert 1")
+        self.lbl_wert1.setObjectName(u"lbl_wert1")
+        layout.addWidget(self.lbl_wert1,2,0)
+        self.cmb_wert1 = QComboBox(self)
+        self.cmb_wert1.setObjectName(u"cmb_wert1")
+        self.cmb_wert1.setEditable(True)
+        layout.addWidget(self.cmb_wert1,2,1)
+        self.lbl_tabelle2 = QLabel("Tabelle 2")
+        self.lbl_tabelle2.setObjectName(u"lbl_tabelle2")
+        layout.addWidget(self.lbl_tabelle2,3,0)
+        self.cmb_tabelle2 = QComboBox(self)
+        self.cmb_tabelle2.setObjectName(u"cmb_tabelle2")
+        self.cmb_tabelle2.setEditable(True)
+        self.cmb_tabelle2.currentIndexChanged.connect(self.updateWert2)
+        layout.addWidget(self.cmb_tabelle2,3,1)
+        self.lbl_wert2 = QLabel("Wert 2")
+        self.lbl_wert2.setObjectName(u"lbl_wert2")
+        layout.addWidget(self.lbl_wert2,4,0)
+        self.cmb_wert2 = QComboBox(self)
+        self.cmb_wert2.setObjectName(u"cmb_wert2")
+        self.cmb_wert2.setEditable(True)
+        layout.addWidget(self.cmb_wert2,4,1)
+        self.lbl_operation =QLabel("Operation")
+        self.lbl_operation.setObjectName(u"lbl_operation")
+        layout.addWidget(self.lbl_operation,5,0)
+        self.cmb_operation = QComboBox(self)
+        self.cmb_operation.setObjectName(u"cmb_operation")
+        self.cmb_operation.setEditable(True)
+        layout.addWidget(self.cmb_operation,5,1)
         self.setLayout(layout)
-        
+
+class dlg_add_umlageschluessel(dlg_umlageschluessel):
+    pdData = ""
+    schema = {}
+    def __init__(self) -> None:
+        super().__init__()
+        global pdData, schema
+        self.setWindowTitle('Umlageschlüssel hinzufügen')
         pdData = fetch_db_pd('Umlageschluessel')
         for i, row in pdData.iterrows():
             self.cmb_schluessel.addItem(str(row[1]))
+            self.cmb_operation.addItem(str(row[6]))
+        
+        schema = create_sql_schema()        
+        entries_to_remove = ('sqlite_sequence', 'Umlageschluessel')
+        
+        for k in entries_to_remove:
+            schema.pop(k, None)
+        
+        tables = list(schema.keys())
+        tables.sort()
+        self.cmb_tabelle1.addItems(tables)
+        self.cmb_tabelle2.addItems(tables)
+        
+    def updateWert1(self):
+        global schema
+        self.cmb_wert1.clear()
+        columns = list(schema[self.cmb_tabelle1.currentText()])
+        columns.pop(0)
+        self.cmb_wert1.addItems(columns)
+
+    def updateWert2(self):
+        global schema
+        self.cmb_wert2.clear()
+        columns = list(schema[self.cmb_tabelle2.currentText()])
+        columns.pop(0)
+        self.cmb_wert2.addItems(columns)
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_schluessel.currentText())
-        if valid:
-            pdData = fetch_db_pd('Umlageschluessel')
-            pdData['Schluessel'] = pdData['Schluessel'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diesen Schlüssel gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_schluessel.currentText() in pdData['Schluessel'].values:
-                msg_exist()
-            else:
-                schluessel = self.cmb_schluessel.currentText()
-                umlageschluessel =([schluessel]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
-                sql_insert('Umlageschluessel',umlageschluessel)
-                msg_ok()    
-                self.accept()
-        else:
+        global pdData
+        pdData['Schluessel'] = pdData['Schluessel'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diesen Schlüssel gibt es schon")
             button = dlg.exec_()
+            
+        if self.cmb_schluessel.currentText() in pdData['Schluessel'].values:
+            msg_exist()
+        else:
+            umlageschluessel = (self.cmb_schluessel.currentText(), self.cmb_tabelle1.currentText(), self.cmb_wert1.currentText(), \
+                self.cmb_tabelle2.currentText(), self.cmb_wert2.currentText(), self.cmb_operation.currentText())
+            sql_insert('Umlageschluessel',umlageschluessel)
+            self.accept()
 
-class dlg_update_umlageschluessel(QDialog):
-    def __init__(self, id, parent=None):
-        super().__init__(parent)
-        layout = QGridLayout()
-        self.setWindowTitle("Umlageschlüssel bearbeiten")
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.action_ok)
-        self.buttonBox.rejected.connect(self.reject)
-        layout.addWidget(self.buttonBox,12,1)
-        self.lbl_edit_schluessel = QLabel("Schlüssel bearbeiten")
-        self.lbl_edit_schluessel.setObjectName(u"lbl_edit_schluessel")
-        layout.addWidget(self.lbl_edit_schluessel,0,0)
-        self.lbl_schluessel = QLabel("Schlüssel")
-        self.lbl_schluessel.setObjectName(u"lbl_schluessel")
-        layout.addWidget(self.lbl_schluessel,1,0)
-        self.cmb_schluessel = QComboBox(self)
-        self.cmb_schluessel.setObjectName(u"cmb_schluessel")
-        self.cmb_schluessel.setEditable(True)
-        layout.addWidget(self.cmb_schluessel,1,1)
-        self.setLayout(layout)
-        
-        global x
-        x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+class dlg_update_umlageschluessel(dlg_umlageschluessel):
+    data = ""
+    schema = {}
+    def __init__(self, id) -> None:
+        super().__init__()
+        self.setWindowTitle('Umlageschlüssel bearbeiten')
+        global data, schema
         data = fetch_data('Umlageschluessel',id)
         self.cmb_schluessel.addItem(str(data[0][1]))
+        self.cmb_tabelle1.addItem(str(data[0][2]))
+        self.cmb_wert1.addItem(str(data[0][3]))
+        self.cmb_tabelle2.addItem(str(data[0][4]))
+        self.cmb_wert2.addItem(str(data[0][5]))
+        self.cmb_operation.addItem(str(data[0][6]))
+        schema = create_sql_schema()        
+        entries_to_remove = ('sqlite_sequence', 'Umlageschluessel')
+        
+        for k in entries_to_remove:
+            schema.pop(k, None)
+        tables = list(schema.keys())
+        tables.sort()
+        self.cmb_tabelle1.addItems(tables)
+        self.cmb_tabelle2.addItems(tables)
+
+    def updateWert1(self):
+        global schema
+        self.cmb_wert1.clear()
+        columns = list(schema[self.cmb_tabelle1.currentText()])
+        columns.pop(0)
+        self.cmb_wert1.addItems(columns)
+
+    def updateWert2(self):
+        global schema
+        self.cmb_wert2.clear()
+        columns = list(schema[self.cmb_tabelle2.currentText()])
+        columns.pop(0)
+        self.cmb_wert2.addItems(columns)
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Umlageschluessel')
-            pdData['Schluessel'] = pdData['Schluessel'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diesen Schluessel gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_schluessel.currentText() in pdData['Schluessel'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Umlageschluessel', x)
-                schluessel = self.cmb_schluessel.currentText()
-                umlageschluessel =(schluessel)
-                umlageschluessel =(umlageschluessel, data[0][0])
-                sql_update('Umlageschluessel',umlageschluessel)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Umlageschluessel')
+        pdData['Schluessel'] = pdData['Schluessel'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diesen Schluessel gibt es schon")
             button = dlg.exec_()
+        
+        if self.cmb_schluessel.currentText() != data[0][1] and self.cmb_schluessel.currentText() in pdData['Schluessel'].values:
+            msg_exist()
+        else:
+            umlageschluessel = (self.cmb_schluessel.currentText(), self.cmb_tabelle1.currentText(), self.cmb_wert1.currentText(), \
+                self.cmb_tabelle2.currentText(), self.cmb_wert2.currentText(), self.cmb_operation.currentText(), data[0][0])
+            sql_update('Umlageschluessel',umlageschluessel)
+            self.accept()
+
+# class dlg_update_umlageschluessel(QDialog):
+#     data = ""
+#     def __init__(self, id, parent=None):
+#         super().__init__(parent)
+#         layout = QGridLayout()
+#         self.setWindowTitle("Umlageschlüssel bearbeiten")
+#         QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+#         self.buttonBox = QDialogButtonBox(QBtn)
+#         self.buttonBox.accepted.connect(self.action_ok)
+#         self.buttonBox.rejected.connect(self.reject)
+#         layout.addWidget(self.buttonBox,12,1)
+#         self.lbl_edit_schluessel = QLabel("Schlüssel bearbeiten")
+#         self.lbl_edit_schluessel.setObjectName(u"lbl_edit_schluessel")
+#         layout.addWidget(self.lbl_edit_schluessel,0,0)
+#         self.lbl_schluessel = QLabel("Schlüssel")
+#         self.lbl_schluessel.setObjectName(u"lbl_schluessel")
+#         layout.addWidget(self.lbl_schluessel,1,0)
+#         self.cmb_schluessel = QComboBox(self)
+#         self.cmb_schluessel.setObjectName(u"cmb_schluessel")
+#         self.cmb_schluessel.setEditable(True)
+#         layout.addWidget(self.cmb_schluessel,1,1)
+#         self.setLayout(layout)
+        
+#         global x, data
+#         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
+#         data = fetch_data('Umlageschluessel',id)
+#         self.cmb_schluessel.addItem(str(data[0][1]))
+
+#     def action_ok(self):
+#         global data
+#         pdData = fetch_db_pd('Umlageschluessel')
+#         pdData['Schluessel'] = pdData['Schluessel'].astype(str)
+                        
+#         def msg_exist():
+#             dlg = QMessageBox(self)
+#             dlg.setWindowTitle("Achtung!")
+#             dlg.setText("Diesen Schluessel gibt es schon")
+#             button = dlg.exec_()
+            
+#         def msg_ok():
+#             dlg = QMessageBox(self)
+#             dlg.setWindowTitle("Erfolgreich!")
+#             dlg.setText("Der Datensatz wurde angelegt")
+#             button = dlg.exec_()
+        
+#         if self.cmb_schluessel.currentText() != data[0][1] and self.cmb_schluessel.currentText() in pdData['Schluessel'].values:
+#             msg_exist()
+#         else:
+#             #data = fetch_data('Umlageschluessel', x)
+#             schluessel = self.cmb_schluessel.currentText()
+#             umlageschluessel =(schluessel)
+#             umlageschluessel =(umlageschluessel, data[0][0])
+#             sql_update('Umlageschluessel',umlageschluessel)
+#             msg_ok()    
+#             self.accept()
 
 class dlg_add_wohnung(QDialog):
     def __init__(self):
@@ -1410,7 +1450,7 @@ class dlg_add_wohnung(QDialog):
             self.cmb_stockwerk.addItem(str(row[1]))
     
     def action_ok(self):
-        valid = re.match(r'^\d{1}\.\d{1}$', self.cmb_nummer.currentText())
+        valid = re.match(r'^\d{1}\.\d{2}$', self.cmb_nummer.currentText())
         if valid:
             pdData = fetch_db_pd('Wohnungen')
             pdData['Nummer'] = pdData['Nummer'].astype(str)
@@ -1437,10 +1477,11 @@ class dlg_add_wohnung(QDialog):
         else:
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format x.x ("0.1", "2.4") sein')
+            dlg.setText('Die Nummer muss im Format x.x ("0.1", "2.10", ...) sein')
             button = dlg.exec_()
 
 class dlg_update_wohnung(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -1490,6 +1531,7 @@ class dlg_update_wohnung(QDialog):
         layout.addWidget(self.cmb_zimmer,5,1)
         self.setLayout(layout)
  
+        global data
         data = fetch_data('Wohnungen',id)
         self.cmb_id.addItem(str(data[0][0]))
         self.cmb_nummer.addItem(str(data[0][1]))
@@ -1499,44 +1541,35 @@ class dlg_update_wohnung(QDialog):
     
     def action_ok(self):
         valid = re.match(r'^\d{1}\.\d{1,2}$', self.cmb_nummer.currentText())
-        if valid:          
+        if valid:
+            global data
+            pdData = fetch_db_pd('Wohnungen')
+            pdData['Nummer'] = pdData['Nummer'].astype(str)
+                            
+            def msg_exist():
+                dlg = QMessageBox(self)
+                dlg.setWindowTitle("Achtung!")
+                dlg.setText("Die Nummer gibt es schon")
+                button = dlg.exec_()
+                
             def msg_ok():
                 dlg = QMessageBox(self)
                 dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde aktualisiert")
+                dlg.setText("Der Datensatz wurde angelegt")
                 button = dlg.exec_()
             
-            wohnung = (self.cmb_nummer.currentText(), self.cmb_stockwerk.currentText(), self.cmb_qm.currentText(), self.cmb_zimmer.currentText(), int(self.cmb_id.currentText()))
-            sql_update('Wohnungen',wohnung)
-            msg_ok()    
-            self.accept()
+            if self.cmb_nummer.currentText() != data[0][1] and self.cmb_nummer.currentText() in pdData['Nummer'].values:
+                msg_exist()
+            else:
+                wohnung = (self.cmb_nummer.currentText(), self.cmb_stockwerk.currentText(), self.cmb_qm.currentText(), self.cmb_zimmer.currentText(), int(self.cmb_id.currentText()))
+                sql_update('Wohnungen',wohnung)
+                msg_ok()    
+                self.accept()
         else:
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
             dlg.setText('Die Nummer muss im Format x.x ("0.1", "2.4") sein')
             button = dlg.exec_()
-
-class frm_neue_wohnung(QWidget):
-    def __init__(self):
-        super().__init__()
-        self.setWindowTitle("Neue Wohnung hinzufügen")
-        layout = QVBoxLayout()
-        self.label = QLabel("Neue Wohnung hinzufügen")
-        self.cmb_wohnungen = QComboBox(self)
-        self.cmb_wohnungen.setObjectName(u"cmb_wohnungen")
-        self.cmb_wohnungen.setGeometry(QRect(10,50,100,30))
-        self.lbl_wohnungen_nummer = QLabel("Nummer")
-        self.lbl_wohnungen_nummer.setObjectName(u"lbl_wohnungen_nummer")
-        self.lbl_wohnungen_nummer.setGeometry(QRect(10, 100, 100, 30))
-        self.tbx_wohnungen = QLineEdit(self)
-        self.tbx_wohnungen.setObjectName(u"tbx_wohnungen")
-        self.tbx_wohnungen.setGeometry(QRect(10,150,100,30))
-        
-        layout.addWidget(self.label)
-        layout.addWidget(self.cmb_wohnungen)
-        layout.addWidget(self.lbl_wohnungen_nummer)
-        layout.addWidget(self.tbx_wohnungen)
-        self.setLayout(layout)
 
 class dlg_add_zaehler(QDialog):
     def __init__(self) -> None:
@@ -1601,38 +1634,32 @@ class dlg_add_zaehler(QDialog):
                 self.cmb_wohnung.addItem(str(row[1]))     
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_zaehler.currentText())
-        if valid:
-            pdData = fetch_db_pd('Zaehler')
-            pdData['Nummer'] = pdData['Nummer'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diese zaehler gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_nummer.currentText() in pdData['Nummer'].values:
-                msg_exist()
-            else:
-                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(),
-                           self.cmb_wohnung.currentText(), self.cmb_ort.currentText())
-                sql_insert('Zaehler',zaehler)
-                msg_ok()    
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Zaehler')
+        pdData['Nummer'] = pdData['Nummer'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diese zaehler gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_nummer.currentText() in pdData['Nummer'].values:
+            msg_exist()
+        else:
+            zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(),
+                        self.cmb_wohnung.currentText(), self.cmb_ort.currentText())
+            sql_insert('Zaehler',zaehler)
+            msg_ok()    
+            self.accept()
 
 class dlg_update_zaehler(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -1682,7 +1709,7 @@ class dlg_update_zaehler(QDialog):
         layout.addWidget(self.cmb_ort,5,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Zaehler',id)
         self.cmb_nummer.addItem(str(data[0][1]))
@@ -1692,38 +1719,32 @@ class dlg_update_zaehler(QDialog):
         self.cmb_ort.addItem(str(data[0][5]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Zaehler')
-            pdData['Nummer'] = pdData['Nummer'].astype(str)
-            data = fetch_data('Zaehler',x)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diesen zaehler gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_nummer.currentText() != data[0][1] and self.cmb_nummer.currentText() in pdData['Nummer'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Zaehler', x)
-                zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(),
-                           self.cmb_wohnung.currentText(), self.cmb_ort.currentText(), data[0][0])
-                sql_update('Zaehler',zaehler)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Zaehler')
+        pdData['Nummer'] = pdData['Nummer'].astype(str)
+
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diesen zaehler gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_nummer.currentText() != data[0][1] and self.cmb_nummer.currentText() in pdData['Nummer'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Zaehler', x)
+            zaehler = (self.cmb_nummer.currentText(), self.cmb_typ.currentText(), self.cmb_gemeinschaft.currentText(),
+                        self.cmb_wohnung.currentText(), self.cmb_ort.currentText(), data[0][0])
+            sql_update('Zaehler',zaehler)
+            msg_ok()    
+            self.accept()
 
 class dlg_add_zaehlertypen(QDialog):
     def __init__(self) -> None:
@@ -1752,38 +1773,32 @@ class dlg_add_zaehlertypen(QDialog):
             self.cmb_zaehler.addItem(str(row[1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_zaehler.currentText())
-        if valid:
-            pdData = fetch_db_pd('Zaehlertypen')
-            pdData['Typ'] = pdData['Typ'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diesen Zählertyp gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_zaehler.currentText() in pdData['Typ'].values:
-                msg_exist()
-            else:
-                zaehler = self.cmb_zaehler.currentText()
-                zaehler =([zaehler]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
-                sql_insert('Zaehlertypen',zaehler)
-                msg_ok()    
-                self.accept()
-        else:
+        pdData = fetch_db_pd('Zaehlertypen')
+        pdData['Typ'] = pdData['Typ'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diesen Zählertyp gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_zaehler.currentText() in pdData['Typ'].values:
+            msg_exist()
+        else:
+            zaehler = self.cmb_zaehler.currentText()
+            zaehler =([zaehler]) # <<< Da nur ein Wert an die SQl Funktion übermittelt wird, muss dieser in einer List sein.
+            sql_insert('Zaehlertypen',zaehler)
+            msg_ok()    
+            self.accept()
 
 class dlg_update_zaehlertypen(QDialog):
+    data = ""
     def __init__(self, id, parent=None):
         super().__init__(parent)
         layout = QGridLayout()
@@ -1805,44 +1820,38 @@ class dlg_update_zaehlertypen(QDialog):
         layout.addWidget(self.cmb_zaehler,1,1)
         self.setLayout(layout)
         
-        global x
+        global x, data
         x = id              # <<< Wichtig! Leitet die ID weiter an fetch_data n def action_ok
         data = fetch_data('Zaehlertypen',id)
         self.cmb_zaehler.addItem(str(data[0][1]))
 
     def action_ok(self):
-        valid = True #re.match(r"\b\d{5}\b", self.cmb_weid.currentText())
-        if valid:
-            pdData = fetch_db_pd('Zaehlertypen')
-            pdData['Typ'] = pdData['Typ'].astype(str)
-                            
-            def msg_exist():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Achtung!")
-                dlg.setText("Diesen Zählertyp gibt es schon")
-                button = dlg.exec_()
-                
-            def msg_ok():
-                dlg = QMessageBox(self)
-                dlg.setWindowTitle("Erfolgreich!")
-                dlg.setText("Der Datensatz wurde angelegt")
-                button = dlg.exec_()
-            
-            if self.cmb_zaehler.currentText() in pdData['Typ'].values:
-                msg_exist()
-            else:
-                data = fetch_data('Zaehlertypen', x)
-                zaehler = self.cmb_zaehler.currentText()
-                zaehler =(zaehler)
-                zaehler =(zaehler, data[0][0])
-                sql_update('Zaehlertypen',zaehler)
-                msg_ok()    
-                self.accept()
-        else:
+        global data
+        pdData = fetch_db_pd('Zaehlertypen')
+        pdData['Typ'] = pdData['Typ'].astype(str)
+                        
+        def msg_exist():
             dlg = QMessageBox(self)
             dlg.setWindowTitle("Achtung!")
-            dlg.setText('Die Nummer muss im Format xxxxx ("00101", "00304") sein')
+            dlg.setText("Diesen Zählertyp gibt es schon")
             button = dlg.exec_()
+            
+        def msg_ok():
+            dlg = QMessageBox(self)
+            dlg.setWindowTitle("Erfolgreich!")
+            dlg.setText("Der Datensatz wurde angelegt")
+            button = dlg.exec_()
+        
+        if self.cmb_zaehler.currentText() != data[0][1] and self.cmb_zaehler.currentText() in pdData['Typ'].values:
+            msg_exist()
+        else:
+            #data = fetch_data('Zaehlertypen', x)
+            zaehler = self.cmb_zaehler.currentText()
+            zaehler =(zaehler)
+            zaehler =(zaehler, data[0][0])
+            sql_update('Zaehlertypen',zaehler)
+            msg_ok()    
+            self.accept()
 
 class Ui_frm_main(object):
     def setupUi(self, frm_main):

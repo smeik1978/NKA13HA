@@ -236,8 +236,16 @@ def main():
     pass
     
     schema = create_sql_schema()
-    keys = tuple(schema.keys())
-    print(schema.valueskosten()())
+    entries_to_remove = ('sqlite_sequence', 'Umlageschluessel')
+    for k in entries_to_remove:
+        schema.pop(k, None)
+    tables = list(schema.keys())
+    #keys.remove('sqlite_sequence')
+    print(schema)
+    print(tables)
+    columns = list(schema[tables[4]])
+    columns.pop(0)
+    print(columns)
 
         
 if __name__ == '__main__':
